@@ -1,0 +1,38 @@
+{
+  "name": "0_authentication_jwt",
+  "version": "1.0.0",
+  "description": "JWT Authentication, Redux Toolkit, bcrypt setup",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "nodemon backend/server.js",
+    "client": "npm start --prefix frontend",
+    "dev": "concurrently \" npm run server \" \" npm run client \""
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mediapipe/face_detection": "^0.4.1646425229",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.10.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
+    "groq-sdk": "^0.37.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.5.0",
+    "nodemailer": "^8.0.1",
+    "pymongo": "^0.0.1-security",
+    "react-hot-toast": "^2.4.1",
+    "react-icons": "^5.3.0",
+    "recharts": "^3.7.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.1",
+    "nodemon": "^3.0.1"
+  }
+}
