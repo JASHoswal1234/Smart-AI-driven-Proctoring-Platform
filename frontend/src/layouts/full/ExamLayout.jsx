@@ -47,7 +47,7 @@ const ExamLayout = () => {
         {/* ------------------------------------------- */}
         {/* PageContent */}
         {/* ------------------------------------------- */}
-        <Outlet key={location.pathname} />
+        <Outlet />
       </PageWrapper>
     </Box>
   );

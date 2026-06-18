@@ -64,7 +64,7 @@ const FullLayout = () => {
           {/* Page Route */}
           {/* ------------------------------------------- */}
           <Box sx={{ minHeight: 'calc(100vh - 170px)' }}>
-            <Outlet key={location.pathname} />
+            <Outlet />
           </Box>
           {/* ------------------------------------------- */}
           {/* End Page */}

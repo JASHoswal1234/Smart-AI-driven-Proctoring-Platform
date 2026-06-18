@@ -10,7 +10,7 @@ const BlankLayout = () => {
   
   return (
     <>
-      <Outlet key={location.pathname} />
+      <Outlet />
     </>
   );
 };
