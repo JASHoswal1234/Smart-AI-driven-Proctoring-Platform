@@ -21,6 +21,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useGetQuestionsQuery, useGetUserResultsQuery } from 'src/slices/examApiSlice';
 import { useCheatingLog } from 'src/context/CheatingLogContext';
+import axiosInstance from 'src/axios';
 
 function Copyright(props) {
   return (
@@ -64,10 +65,8 @@ const DescriptionAndInstructions = () => {
   React.useEffect(() => {
     const checkCodingQuestions = async () => {
       try {
-        const response = await fetch(`/api/coding/questions/${examId}`, {
-          credentials: 'include',
-        });
-        const data = await response.json();
+        const response = await axiosInstance.get(`/api/coding/questions/${examId}`);
+        const data = response.data;
         setHasCodingQuestions(data && data.length > 0);
       } catch (error) {
         setHasCodingQuestions(false);

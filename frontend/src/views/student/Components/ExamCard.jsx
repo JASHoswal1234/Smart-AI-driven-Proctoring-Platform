@@ -10,6 +10,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { useDeleteExamMutation } from 'src/slices/examApiSlice';
 import { useGetCodingQuestionsQuery } from 'src/slices/codingQuestionApiSlice';
+import axiosInstance from 'src/axios';
 
 // Import background images
 import bg1 from '../../../assets/images/backgrounds/6.png'; // Blue
@@ -44,10 +45,8 @@ export default function ExamCard({ exam, isCompleted = false, status = 'active',
   React.useEffect(() => {
     const fetchQuestionCount = async () => {
       try {
-        const response = await fetch(`/api/users/questions/exam/${examId}`, {
-          credentials: 'include',
-        });
-        const mcqQuestions = await response.json();
+        const response = await axiosInstance.get(`/api/users/questions/exam/${examId}`);
+        const mcqQuestions = response.data;
         const codingCount = codingQuestions?.length || 0;
         setActualQuestionCount(mcqQuestions.length + codingCount);
       } catch (error) {
