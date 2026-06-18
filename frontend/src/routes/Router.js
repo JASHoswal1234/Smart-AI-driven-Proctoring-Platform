@@ -3,41 +3,37 @@ import { Navigate, Route, createBrowserRouter, createRoutesFromElements } from '
 import Loadable from '../layouts/full/shared/loadable/Loadable';
 
 /* ***Layouts**** */
-const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')));
-const FullLayout = Loadable(lazy(() => import('../layouts/full/FullLayout')));
-const ExamLayout = Loadable(lazy(() => import('../layouts/full/ExamLayout')));
+const BlankLayout = Loadable(() => import('../layouts/blank/BlankLayout'));
+const FullLayout = Loadable(() => import('../layouts/full/FullLayout'));
+const ExamLayout = Loadable(() => import('../layouts/full/ExamLayout'));
 
 /* ****Pages***** */
-// const Dashboard = Loadable(lazy(() => import('../views/dashboard/Dashboard')));
-const SamplePage = Loadable(lazy(() => import('../views/sample-page/SamplePage')));
-const Success = Loadable(lazy(() => import('../views/Success')));
+const SamplePage = Loadable(() => import('../views/sample-page/SamplePage'));
+const Success = Loadable(() => import('../views/Success'));
 
-// const Icons = Loadable(lazy(() => import('../views/icons/Icons')));
-// const TypographyPage = Loadable(lazy(() => import('../views/utilities/TypographyPage')));
-// const Shadow = Loadable(lazy(() => import('../views/utilities/Shadow')));
 //Student Routes
+const Dashboard = Loadable(() => import('./../views/student/Dashboard'));
+const TestPage = Loadable(() => import('./../views/student/TestPage'));
+const ExamPage = Loadable(() => import('./../views/student/ExamPage'));
+const ExamDetails = Loadable(() => import('./../views/student/ExamDetails'));
+const CodeDetails = Loadable(() => import('../views/student/CodeDetails'));
+const ResultPage = Loadable(() => import('./../views/student/ResultPage'));
+const ExamAnalyticsPage = Loadable(() => import('./../views/student/ExamAnalyticsPage'));
+const Coder = Loadable(() => import('../views/student/Coder'));
 
-const Dashboard = Loadable(lazy(() => import('./../views/student/Dashboard')));
-const TestPage = Loadable(lazy(() => import('./../views/student/TestPage')));
-const ExamPage = Loadable(lazy(() => import('./../views/student/ExamPage')));
-const ExamDetails = Loadable(lazy(() => import('./../views/student/ExamDetails')));
-const CodeDetails = Loadable(lazy(() => import('../views/student/CodeDetails')));
-const ResultPage = Loadable(lazy(() => import('./../views/student/ResultPage')));
-const ExamAnalyticsPage = Loadable(lazy(() => import('./../views/student/ExamAnalyticsPage')));
-const Coder = Loadable(lazy(() => import('../views/student/Coder')));
 //Auth Routes
-const Error = Loadable(lazy(() => import('../views/authentication/Error')));
-const Register = Loadable(lazy(() => import('../views/authentication/Register')));
-const Login = Loadable(lazy(() => import('../views/authentication/Login')));
-const UserAccount = Loadable(lazy(() => import('../views/authentication/UserAccount')));
-const UserProfile = Loadable(lazy(() => import('../views/authentication/UserProfile')));
+const Error = Loadable(() => import('../views/authentication/Error'));
+const Register = Loadable(() => import('../views/authentication/Register'));
+const Login = Loadable(() => import('../views/authentication/Login'));
+const UserAccount = Loadable(() => import('../views/authentication/UserAccount'));
+const UserProfile = Loadable(() => import('../views/authentication/UserProfile'));
 
 // Teacher Routes
-const CreateExamPage = Loadable(lazy(() => import('./../views/teacher/CreateExamPage')));
-const ExamLogPage = Loadable(lazy(() => import('./../views/teacher/ExamLogPage')));
-const AddQuestions = Loadable(lazy(() => import('./../views/teacher/AddQuestions')));
-const PrivateRoute = Loadable(lazy(() => import('src/views/authentication/PrivateRoute')));
-const TeacherRoute = Loadable(lazy(() => import('src/views/authentication/TeacherRoute')));
+const CreateExamPage = Loadable(() => import('./../views/teacher/CreateExamPage'));
+const ExamLogPage = Loadable(() => import('./../views/teacher/ExamLogPage'));
+const AddQuestions = Loadable(() => import('./../views/teacher/AddQuestions'));
+const PrivateRoute = Loadable(() => import('src/views/authentication/PrivateRoute'));
+const TeacherRoute = Loadable(() => import('src/views/authentication/TeacherRoute'));
 
 const Router = createBrowserRouter(
   createRoutesFromElements(
