@@ -37,12 +37,10 @@ const TeacherRoute = Loadable(() => import('src/views/authentication/TeacherRout
 
 const Router = createBrowserRouter(
   createRoutesFromElements(
-    // Every router we create will now go in here as
-    // they going to be child of our main App component
-    <>
-      {/* // Private Routes */}
-      <Route path="" element={<PrivateRoute />}>
-        {/* // Main layout */}
+    <Route path="/">
+      {/* Private Routes */}
+      <Route element={<PrivateRoute />}>
+        {/* Main layout */}
         <Route element={<FullLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
@@ -53,7 +51,7 @@ const Router = createBrowserRouter(
           <Route path="result" element={<ResultPage />} />
           <Route path="user/profile" element={<UserProfile />} />
           <Route path="user/account" element={<UserAccount />} />
-          <Route path="" element={<TeacherRoute />}>
+          <Route element={<TeacherRoute />}>
             <Route path="create-exam" element={<CreateExamPage />} />
             <Route path="add-questions" element={<AddQuestions />} />
             <Route path="exam-log" element={<ExamLogPage />} />
@@ -68,13 +66,12 @@ const Router = createBrowserRouter(
       </Route>
 
       {/* Authentication layout */}
-      <Route path="/auth" element={<BlankLayout />}>
+      <Route path="auth" element={<BlankLayout />}>
         <Route path="404" element={<Error />} />
-        <Route path="/auth/register" element={<Register />} />
-        <Route path="/auth/login" element={<Login />} />
-        {/* <Route path="*" element={<Navigate to="/auth/404" />} /> */}
+        <Route path="register" element={<Register />} />
+        <Route path="login" element={<Login />} />
       </Route>
-    </>,
+    </Route>
   ),
 );
 
