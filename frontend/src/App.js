@@ -11,8 +11,6 @@ import store from './store';
 // Tostify
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// Cheating Log Provider
-import { CheatingLogProvider } from './context/CheatingLogContext';
 
 function App() {
   const theme = baselightTheme;

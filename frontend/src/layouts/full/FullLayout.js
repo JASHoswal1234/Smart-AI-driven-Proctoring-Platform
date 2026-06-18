@@ -26,12 +26,9 @@ const FullLayout = () => {
   const location = useLocation();
   
   useEffect(() => {
-    console.log('🔄 FullLayout location changed:', location.pathname);
     window.scrollTo(0, 0);
   }, [location.pathname]);
   // const lgUp = useMediaQuery((theme) => theme.breakpoints.up("lg"));
-
-  console.log('🎨 FullLayout rendering, path:', location.pathname);
 
   return (
     <MainWrapper className="mainwrapper">

@@ -11,15 +11,11 @@ import { Helmet } from 'react-helmet';
 import axiosInstance from '../../axios';
 
 const Dashboard = () => {
-  console.log('🔵 Dashboard component MOUNTED');
-  
   const { userInfo } = useSelector((state) => state.auth);
   const { data: userExams } = useGetExamsQuery();
   const { data: userResults } = useGetUserResultsQuery();
   const navigate = useNavigate();
   const isTeacher = userInfo?.role === 'teacher';
-  
-  console.log('🔵 Dashboard rendering, userInfo:', userInfo?.name);
 
   // Get completed exam IDs
   const completedExamIds = new Set(

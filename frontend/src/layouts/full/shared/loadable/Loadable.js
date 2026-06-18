@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { CircularProgress, Box } from '@mui/material';
 
 const Loader = () => (
@@ -14,35 +14,17 @@ const Loader = () => (
   </Box>
 );
 
-// ✅ Wraps lazy() with automatic retry on chunk load failure
-const lazyWithRetry = (importFn) =>
-  lazy(() =>
-    importFn().catch((error) => {
-      // Chunk failed — likely stale cache after redeployment
-      // Reload once to get fresh chunks; avoid infinite reload loop
-      const hasReloaded = sessionStorage.getItem('chunk_reload_attempted');
-      if (!hasReloaded) {
-        sessionStorage.setItem('chunk_reload_attempted', 'true');
-        window.location.reload();
-        return { default: () => null };
-      }
-      // Already tried reloading — throw so an error boundary can catch it
-      throw error;
-    })
-  );
-
-const Loadable = (importFn) => {
-  const Component = lazyWithRetry(importFn);
-
-  function LoadableComponent(props) {
+// ✅ Simplified Loadable - no retry logic that could hang
+const Loadable = (importFunc) => {
+  const LazyComponent = lazy(importFunc);
+  
+  return function LoadableComponent(props) {
     return (
       <Suspense fallback={<Loader />}>
-        <Component {...props} />
+        <LazyComponent {...props} />
       </Suspense>
     );
-  }
-
-  return LoadableComponent;
+  };
 };
 
 export default Loadable;
