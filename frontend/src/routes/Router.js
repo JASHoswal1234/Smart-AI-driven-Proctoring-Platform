@@ -32,8 +32,8 @@ const UserProfile = Loadable(() => import('../views/authentication/UserProfile')
 const CreateExamPage = Loadable(() => import('./../views/teacher/CreateExamPage'));
 const ExamLogPage = Loadable(() => import('./../views/teacher/ExamLogPage'));
 const AddQuestions = Loadable(() => import('./../views/teacher/AddQuestions'));
-const PrivateRoute = Loadable(() => import('src/views/authentication/PrivateRoute'));
-const TeacherRoute = Loadable(() => import('src/views/authentication/TeacherRoute'));
+const PrivateRoute = Loadable(() => import('../views/authentication/PrivateRoute'));
+const TeacherRoute = Loadable(() => import('../views/authentication/TeacherRoute'));
 
 const Router = createBrowserRouter(
   createRoutesFromElements(
