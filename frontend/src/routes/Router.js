@@ -47,27 +47,27 @@ const Router = createBrowserRouter(
       {/* // Private Routes */}
       <Route path="" element={<PrivateRoute />}>
         {/* // Main layout */}
-        <Route path="/" element={<FullLayout />}>
-          <Route index={true} path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="/dashboard" exact={true} element={<Dashboard />} />
-          <Route path="/sample-page" exact={true} element={<SamplePage />} />
-          <Route path="/Success" exact={true} element={<Success />} />
-          <Route path="/exam" exact={true} element={<ExamPage />} />
-          <Route path="/exam-analytics/:examId" exact={true} element={<ExamAnalyticsPage />} />
-          <Route path="/result" exact={true} element={<ResultPage />} />
-          <Route path="/user/profile" exact={true} element={<UserProfile />} />
-          <Route path="/user/account" exact={true} element={<UserAccount />} />
+        <Route element={<FullLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="sample-page" element={<SamplePage />} />
+          <Route path="Success" element={<Success />} />
+          <Route path="exam" element={<ExamPage />} />
+          <Route path="exam-analytics/:examId" element={<ExamAnalyticsPage />} />
+          <Route path="result" element={<ResultPage />} />
+          <Route path="user/profile" element={<UserProfile />} />
+          <Route path="user/account" element={<UserAccount />} />
           <Route path="" element={<TeacherRoute />}>
-            <Route path="/create-exam" exact={true} element={<CreateExamPage />} />
-            <Route path="/add-questions" exact={true} element={<AddQuestions />} />
-            <Route path="/exam-log" exact={true} element={<ExamLogPage />} />
+            <Route path="create-exam" element={<CreateExamPage />} />
+            <Route path="add-questions" element={<AddQuestions />} />
+            <Route path="exam-log" element={<ExamLogPage />} />
           </Route>
         </Route>
-        <Route path="/" element={<ExamLayout />}>
-          <Route path="exam/:examId" exact={true} element={<ExamDetails />} />
-          <Route path="exam/:examId/codedetails" exact={true} element={<CodeDetails />} />
-          <Route path="exam/:examId/:testId" exact={true} element={<TestPage />} />
-          <Route path="exam/:examId/code" exact={true} element={<Coder />} />
+        <Route element={<ExamLayout />}>
+          <Route path="exam/:examId" element={<ExamDetails />} />
+          <Route path="exam/:examId/codedetails" element={<CodeDetails />} />
+          <Route path="exam/:examId/:testId" element={<TestPage />} />
+          <Route path="exam/:examId/code" element={<Coder />} />
         </Route>
       </Route>
 
