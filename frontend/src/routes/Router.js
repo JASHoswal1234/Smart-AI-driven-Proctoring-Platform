@@ -1,39 +1,38 @@
 import React from 'react';
 import { Navigate, Route, createBrowserRouter, createRoutesFromElements } from 'react-router-dom';
-import Loadable from '../layouts/full/shared/loadable/Loadable';
 
 /* ***Layouts**** */
-const BlankLayout = Loadable(() => import('../layouts/blank/BlankLayout'));
-const FullLayout = Loadable(() => import('../layouts/full/FullLayout'));
-const ExamLayout = Loadable(() => import('../layouts/full/ExamLayout'));
+import BlankLayout from '../layouts/blank/BlankLayout';
+import FullLayout from '../layouts/full/FullLayout';
+import ExamLayout from '../layouts/full/ExamLayout';
 
 /* ****Pages***** */
-const SamplePage = Loadable(() => import('../views/sample-page/SamplePage'));
-const Success = Loadable(() => import('../views/Success'));
+import SamplePage from '../views/sample-page/SamplePage';
+import Success from '../views/Success';
 
 //Student Routes
-const Dashboard = Loadable(() => import('./../views/student/Dashboard'));
-const TestPage = Loadable(() => import('./../views/student/TestPage'));
-const ExamPage = Loadable(() => import('./../views/student/ExamPage'));
-const ExamDetails = Loadable(() => import('./../views/student/ExamDetails'));
-const CodeDetails = Loadable(() => import('../views/student/CodeDetails'));
-const ResultPage = Loadable(() => import('./../views/student/ResultPage'));
-const ExamAnalyticsPage = Loadable(() => import('./../views/student/ExamAnalyticsPage'));
-const Coder = Loadable(() => import('../views/student/Coder'));
+import Dashboard from './../views/student/Dashboard';
+import TestPage from './../views/student/TestPage';
+import ExamPage from './../views/student/ExamPage';
+import ExamDetails from './../views/student/ExamDetails';
+import CodeDetails from '../views/student/CodeDetails';
+import ResultPage from './../views/student/ResultPage';
+import ExamAnalyticsPage from './../views/student/ExamAnalyticsPage';
+import Coder from '../views/student/Coder';
 
 //Auth Routes
-const Error = Loadable(() => import('../views/authentication/Error'));
-const Register = Loadable(() => import('../views/authentication/Register'));
-const Login = Loadable(() => import('../views/authentication/Login'));
-const UserAccount = Loadable(() => import('../views/authentication/UserAccount'));
-const UserProfile = Loadable(() => import('../views/authentication/UserProfile'));
+import Error from '../views/authentication/Error';
+import Register from '../views/authentication/Register';
+import Login from '../views/authentication/Login';
+import UserAccount from '../views/authentication/UserAccount';
+import UserProfile from '../views/authentication/UserProfile';
 
 // Teacher Routes
-const CreateExamPage = Loadable(() => import('./../views/teacher/CreateExamPage'));
-const ExamLogPage = Loadable(() => import('./../views/teacher/ExamLogPage'));
-const AddQuestions = Loadable(() => import('./../views/teacher/AddQuestions'));
-const PrivateRoute = Loadable(() => import('../views/authentication/PrivateRoute'));
-const TeacherRoute = Loadable(() => import('../views/authentication/TeacherRoute'));
+import CreateExamPage from './../views/teacher/CreateExamPage';
+import ExamLogPage from './../views/teacher/ExamLogPage';
+import AddQuestions from './../views/teacher/AddQuestions';
+import PrivateRoute from '../views/authentication/PrivateRoute';
+import TeacherRoute from '../views/authentication/TeacherRoute';
 
 const Router = createBrowserRouter(
   createRoutesFromElements(
