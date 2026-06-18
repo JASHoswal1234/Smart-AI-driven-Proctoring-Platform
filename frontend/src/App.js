@@ -19,11 +19,9 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <Provider store={store}>
-        <CheatingLogProvider>
-          <ToastContainer />
-          <CssBaseline />
-          <RouterProvider router={Router} />
-        </CheatingLogProvider>
+        <ToastContainer />
+        <CssBaseline />
+        <RouterProvider router={Router} />
       </Provider>
     </ThemeProvider>
   );

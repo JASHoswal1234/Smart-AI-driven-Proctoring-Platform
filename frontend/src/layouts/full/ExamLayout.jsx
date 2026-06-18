@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { styled, Container, Box } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
+import { CheatingLogProvider } from '../../context/CheatingLogContext';
 
 import Header from './header/Header';
 import Sidebar from './sidebar/Sidebar';
@@ -31,25 +32,27 @@ const ExamLayout = () => {
   // const lgUp = useMediaQuery((theme) => theme.breakpoints.up("lg"));
 
   return (
-    <Box>
-      {/* ------------------------------------------- */}
-      {/* ------------------------------------------- */}
-      {/* Main Wrapper */}
-      {/* ------------------------------------------- */}
-      <PageWrapper>
+    <CheatingLogProvider>
+      <Box>
         {/* ------------------------------------------- */}
-        {/* Header */}
         {/* ------------------------------------------- */}
-        <Header
-          toggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
-          toggleMobileSidebar={() => setMobileSidebarOpen(true)}
-        />
+        {/* Main Wrapper */}
         {/* ------------------------------------------- */}
-        {/* PageContent */}
-        {/* ------------------------------------------- */}
-        <Outlet />
-      </PageWrapper>
-    </Box>
+        <PageWrapper>
+          {/* ------------------------------------------- */}
+          {/* Header */}
+          {/* ------------------------------------------- */}
+          <Header
+            toggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
+            toggleMobileSidebar={() => setMobileSidebarOpen(true)}
+          />
+          {/* ------------------------------------------- */}
+          {/* PageContent */}
+          {/* ------------------------------------------- */}
+          <Outlet />
+        </PageWrapper>
+      </Box>
+    </CheatingLogProvider>
   );
 };
 
