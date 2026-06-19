@@ -372,29 +372,35 @@ const TestPage = () => {
 
   const handleForceSubmitRef = useRef(null);
   const terminatedRef = useRef(false); // prevent double termination
+  const [shouldTerminate, setShouldTerminate] = useState(false); // trigger for termination
 
-  // Watch violations — auto submit when limit hit
+  // CRITICAL: Watch violations with a simpler approach
   useEffect(() => {
     const total = cheatingLog.totalViolations || 0;
-    console.log('[TestPage] 🚨 Violation count changed:', total, 'Terminated:', terminatedRef.current);
     
-    if (total >= 5 && !terminatedRef.current) {
-      console.log('[TestPage] 💥 TERMINATING EXAM - 5 violations reached!');
+    console.log('[TestPage] 🚨 Violation check - Total:', total, 'Type:', typeof total, 'Terminated:', terminatedRef.current);
+    
+    // Set termination trigger when >= 5
+    if (total >= 5 && !terminatedRef.current && !shouldTerminate) {
+      console.log('[TestPage] 💥 SETTING TERMINATION FLAG');
+      setShouldTerminate(true);
+    }
+  }, [cheatingLog.totalViolations]);
+
+  // Separate effect to handle termination
+  useEffect(() => {
+    if (shouldTerminate && !terminatedRef.current) {
+      console.log('[TestPage] 💥 EXECUTING TERMINATION NOW!');
       terminatedRef.current = true;
 
-      swal({
-        title: 'Exam Terminated!',
-        text: 'You have reached 5 violations. Your exam has been submitted.',
-        icon: 'error',
-        button: 'OK',
-        closeOnClickOutside: false,
-        closeOnEsc: false,
-      }).then(async () => {
-        console.log('[Terminate] Starting termination process...');
+      (async () => {
+        console.log('[Terminate] 🔴 Starting termination sequence...');
+        
         const answers = Object.keys(answersRef.current).length > 0
           ? answersRef.current
           : { terminated: 'terminated' };
 
+        // Save result
         try {
           await axiosInstance.post(
             '/api/users/results',
@@ -410,23 +416,35 @@ const TestPage = () => {
           }
         }
 
+        // Save cheating log
         try {
           await saveCheatingLogMutation({
             ...cheatingLog,
             username: userInfo?.name,
             email: userInfo?.email,
             examId,
+            totalViolations: cheatingLog.totalViolations || 5,
           }).unwrap();
           console.log('[Terminate] ✅ Cheating log saved');
         } catch (err) {
           console.error('[Terminate] Cheating log save failed:', err);
         }
 
+        // Show alert and navigate
+        await swal({
+          title: 'Exam Terminated!',
+          text: 'You have reached 5 violations. Your exam has been submitted.',
+          icon: 'error',
+          button: 'OK',
+          closeOnClickOutside: false,
+          closeOnEsc: false,
+        });
+
         console.log('[Terminate] 🔄 Navigating to dashboard...');
         navigate('/dashboard');
-      });
+      })();
     }
-  }, [cheatingLog.totalViolations, cheatingLog, examId, userInfo, saveCheatingLogMutation, navigate]);
+  }, [shouldTerminate, examId, cheatingLog, userInfo, saveCheatingLogMutation, navigate]);
 
   const handleTestSubmission = async () => {
     if (isSubmitting) return; // Prevent multiple submissions
