@@ -65,6 +65,12 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate }) 
 
   // ================= HANDLE VIOLATION =================
   const handleViolation = useCallback(async (type, label) => {
+    // CRITICAL: Stop detecting violations at 5
+    if (totalViolationsRef.current >= 5) {
+      console.log('[WebCam] 🛑 Already at 5 violations, ignoring new detections');
+      return;
+    }
+
     const now = Date.now();
 
     // Per-type cooldown check
@@ -74,23 +80,29 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate }) 
     const newTotal = totalViolationsRef.current + 1;
     totalViolationsRef.current = newTotal;
 
+    console.log('[WebCam] 🚨 VIOLATION!', type, '- New total:', newTotal, 'Type:', typeof newTotal);
+
     // Upload screenshot in background
     const screenshot = await captureAndUpload(type);
 
-    updateCheatingLog((prev) => ({
-      ...prev,
-      totalViolations: newTotal,
-      [`${type}Count`]: (prev[`${type}Count`] || 0) + 1,
-      screenshots: screenshot
-        ? [...(prev.screenshots || []), screenshot]
-        : prev.screenshots || [],
-    }));
+    updateCheatingLog((prev) => {
+      const updated = {
+        ...prev,
+        totalViolations: newTotal,
+        [`${type}Count`]: (prev[`${type}Count`] || 0) + 1,
+        screenshots: screenshot
+          ? [...(prev.screenshots || []), screenshot]
+          : prev.screenshots || [],
+      };
+      console.log('[WebCam] 📝 Updated cheating log:', updated);
+      return updated;
+    });
 
-    if (newTotal >= 5) {
-      // TestPage watches totalViolations and handles termination + submission
-      // Just update the count, don't show swal here
-    } else {
+    // Don't show swal at 5 - TestPage will handle termination
+    if (newTotal < 5) {
       swal('⚠️ Violation Detected', `${label}\nViolation ${newTotal}/5`, 'warning');
+    } else {
+      console.log('[WebCam] 🔴 Reached 5 violations - TestPage will terminate');
     }
   }, [captureAndUpload, updateCheatingLog]);
 
@@ -118,6 +130,9 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate }) 
     });
 
     faceMesh.onResults((results) => {
+      // Stop processing if 5+ violations
+      if (totalViolationsRef.current >= 5) return;
+
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
         awayFramesRef.current = 0;
         handleViolation('noFace', 'No face detected');
@@ -169,6 +184,9 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate }) 
       const net = await cocossd.load();
 
       intervalId = setInterval(async () => {
+        // Stop processing if 5+ violations
+        if (totalViolationsRef.current >= 5) return;
+
         const video = webcamRef.current?.video;
         if (!video || video.readyState !== 4) return;
 
