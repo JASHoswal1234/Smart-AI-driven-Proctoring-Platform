@@ -411,8 +411,22 @@ const TestPage = () => {
       console.log('[TestPage] 💥 EXECUTING TERMINATION NOW!');
       terminatedRef.current = true;
 
+      // INSTANT termination - show popup FIRST, save in background
+      swal({
+        title: 'Exam Terminated!',
+        text: 'You have reached 5 violations. Your exam has been submitted.',
+        icon: 'error',
+        button: 'OK',
+        closeOnClickOutside: false,
+        closeOnEsc: false,
+      }).then(() => {
+        console.log('[Terminate] 🔄 Navigating to dashboard...');
+        navigate('/dashboard');
+      });
+
+      // Save in background (don't wait)
       (async () => {
-        console.log('[Terminate] 🔴 Starting termination sequence...');
+        console.log('[Terminate] 🔴 Saving results in background...');
         
         const answers = Object.keys(answersRef.current).length > 0
           ? answersRef.current
@@ -447,19 +461,6 @@ const TestPage = () => {
         } catch (err) {
           console.error('[Terminate] Cheating log save failed:', err);
         }
-
-        // Show alert and navigate
-        await swal({
-          title: 'Exam Terminated!',
-          text: 'You have reached 5 violations. Your exam has been submitted.',
-          icon: 'error',
-          button: 'OK',
-          closeOnClickOutside: false,
-          closeOnEsc: false,
-        });
-
-        console.log('[Terminate] 🔄 Navigating to dashboard...');
-        navigate('/dashboard');
       })();
     }
   }, [shouldTerminate, examId, cheatingLog, userInfo, saveCheatingLogMutation, navigate]);
