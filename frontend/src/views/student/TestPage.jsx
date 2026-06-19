@@ -275,6 +275,12 @@ const TestPage = () => {
   // Tab switching detection
   useEffect(() => {
     const handleVisibilityChange = () => {
+      // Stop tracking if terminated
+      if (terminatedRef.current || (cheatingLog.totalViolations || 0) >= 5) {
+        console.log('[TestPage] ⛔ Ignoring visibility change - exam terminated');
+        return;
+      }
+
       if (document.hidden) {
         const now = Date.now();
         // Debounce to prevent multiple triggers
@@ -296,6 +302,12 @@ const TestPage = () => {
     };
 
     const handleBlur = () => {
+      // Stop tracking if terminated
+      if (terminatedRef.current || (cheatingLog.totalViolations || 0) >= 5) {
+        console.log('[TestPage] ⛔ Ignoring blur - exam terminated');
+        return;
+      }
+
       // Detect when window loses focus (Windows key, Alt+Tab, etc.)
       const now = Date.now();
       if (now - lastTabSwitchTime >= 2000) {
@@ -313,6 +325,12 @@ const TestPage = () => {
     };
 
     const handleFullscreenChange = () => {
+      // Stop tracking if terminated
+      if (terminatedRef.current || (cheatingLog.totalViolations || 0) >= 5) {
+        console.log('[TestPage] ⛔ Ignoring fullscreen change - exam terminated');
+        return;
+      }
+
       if (!document.fullscreenElement) {
         // User exited fullscreen
         const now = Date.now();
