@@ -31,6 +31,39 @@ const TestPage = () => {
   const { data: codingQuestionsData, isLoading: isCodingLoading } = useGetCodingQuestionsQuery(examId);
   const [score, setScore] = useState(0);
   const answersRef = useRef({}); // shared answers ref updated by MCQ component
+  const [cameraPermissionGranted, setCameraPermissionGranted] = useState(false);
+  const [cameraPermissionChecking, setCameraPermissionChecking] = useState(true);
+
+  // Check camera permission on mount
+  useEffect(() => {
+    const checkCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Camera permission granted
+        stream.getTracks().forEach(track => track.stop()); // Stop the test stream
+        setCameraPermissionGranted(true);
+        setCameraPermissionChecking(false);
+      } catch (error) {
+        console.error('Camera permission denied:', error);
+        setCameraPermissionGranted(false);
+        setCameraPermissionChecking(false);
+        
+        // Show error and redirect
+        swal({
+          title: 'Camera Permission Required',
+          text: 'You must allow camera access to take this exam. The exam cannot proceed without camera permission.',
+          icon: 'error',
+          button: 'Go Back',
+          closeOnClickOutside: false,
+          closeOnEsc: false,
+        }).then(() => {
+          navigate('/dashboard');
+        });
+      }
+    };
+
+    checkCameraPermission();
+  }, [navigate]);
 
   // Initialize cheating log with exam and user info
   useEffect(() => {
@@ -384,7 +417,7 @@ const TestPage = () => {
         navigate('/dashboard');
       });
     }
-  }, [cheatingLog.totalViolations]);
+  }, [cheatingLog.totalViolations, cheatingLog, examId, userInfo, saveCheatingLogMutation, navigate]);
 
   const handleTestSubmission = async () => {
     if (isSubmitting) return; // Prevent multiple submissions
@@ -458,10 +491,21 @@ const TestPage = () => {
     setScore(score + 1);
   };
 
-  if (isExamsLoading || isLoading || isCodingLoading) {
+  if (isExamsLoading || isLoading || isCodingLoading || cameraPermissionChecking) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Block exam if camera permission not granted
+  if (!cameraPermissionGranted) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <Typography variant="h5" color="error">
+          Camera permission is required to take this exam.
+        </Typography>
       </Box>
     );
   }
