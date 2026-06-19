@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Grid, CircularProgress } from '@mui/material';
+import { Box, Grid, CircularProgress, Typography } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
 import BlankCard from 'src/components/shared/BlankCard';
 import MultipleChoiceQuestion from './Components/MultipleChoiceQuestion';
@@ -376,7 +376,10 @@ const TestPage = () => {
   // Watch violations — auto submit when limit hit
   useEffect(() => {
     const total = cheatingLog.totalViolations || 0;
+    console.log('[TestPage] 🚨 Violation count changed:', total, 'Terminated:', terminatedRef.current);
+    
     if (total >= 5 && !terminatedRef.current) {
+      console.log('[TestPage] 💥 TERMINATING EXAM - 5 violations reached!');
       terminatedRef.current = true;
 
       swal({
@@ -385,7 +388,9 @@ const TestPage = () => {
         icon: 'error',
         button: 'OK',
         closeOnClickOutside: false,
+        closeOnEsc: false,
       }).then(async () => {
+        console.log('[Terminate] Starting termination process...');
         const answers = Object.keys(answersRef.current).length > 0
           ? answersRef.current
           : { terminated: 'terminated' };
@@ -400,6 +405,8 @@ const TestPage = () => {
         } catch (err) {
           if (err?.response?.status !== 400) {
             console.error('[Terminate] Result save failed:', err?.response?.data);
+          } else {
+            console.log('[Terminate] Result already exists (400)');
           }
         }
 
@@ -410,10 +417,12 @@ const TestPage = () => {
             email: userInfo?.email,
             examId,
           }).unwrap();
+          console.log('[Terminate] ✅ Cheating log saved');
         } catch (err) {
           console.error('[Terminate] Cheating log save failed:', err);
         }
 
+        console.log('[Terminate] 🔄 Navigating to dashboard...');
         navigate('/dashboard');
       });
     }

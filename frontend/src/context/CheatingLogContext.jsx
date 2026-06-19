@@ -6,12 +6,14 @@ const CheatingLogContext = createContext();
 export const CheatingLogProvider = ({ children }) => {
   const { userInfo } = useSelector((state) => state.auth);
   const [cheatingLog, setCheatingLog] = useState({
+    totalViolations: 0,
     noFaceCount: 0,
     multipleFaceCount: 0,
     cellPhoneCount: 0,
     prohibitedObjectCount: 0,
     tabSwitchCount: 0,
     lookingAwayCount: 0,
+    screenshots: [],
     examId: '',
     username: userInfo?.name || '',
     email: userInfo?.email || '',
@@ -36,12 +38,14 @@ export const CheatingLogProvider = ({ children }) => {
 
   const resetCheatingLog = (examId) => {
     const resetLog = {
+      totalViolations: 0,
       noFaceCount: 0,
       multipleFaceCount: 0,
       cellPhoneCount: 0,
       prohibitedObjectCount: 0,
       tabSwitchCount: 0,
       lookingAwayCount: 0,
+      screenshots: [],
       examId: examId,
       username: userInfo?.name || '',
       email: userInfo?.email || '',
