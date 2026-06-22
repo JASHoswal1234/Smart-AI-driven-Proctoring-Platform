@@ -1,9 +1,6 @@
 import {
   Button,
-  Card,
-  CardContent,
   List,
-  ListItemText,
   Stack,
   Typography,
   Chip,
@@ -18,19 +15,6 @@ import { toast } from 'react-toastify';
 import { useGetQuestionsQuery, useGetUserResultsQuery } from 'src/slices/examApiSlice';
 import { useCheatingLog } from 'src/context/CheatingLogContext';
 import axiosInstance from 'src/axios';
-
-function Copyright(props) {
-  return (
-    <Typography variant="body2" color="text.secondary" align="center" {...props}>
-      {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
 
 const DescriptionAndInstructions = () => {
   const navigate = useNavigate();
@@ -53,7 +37,7 @@ const DescriptionAndInstructions = () => {
   React.useEffect(() => {
     resetCheatingLog(examId);
   }, [examId]);
-  const { data: questions, isLoading, isError } = useGetQuestionsQuery(examId);
+  const { data: questions, isError } = useGetQuestionsQuery(examId);
   const [hasCodingQuestions, setHasCodingQuestions] = useState(false);
 
   // Check if exam has coding questions
@@ -79,9 +63,9 @@ const DescriptionAndInstructions = () => {
 
   if (isError) {
     return (
-      <Card><CardContent>
+      <Box sx={{ p: 3 }}>
         <Typography color="error">Failed to load exam questions. Please refresh and try again.</Typography>
-      </CardContent></Card>
+      </Box>
     );
   }
 
