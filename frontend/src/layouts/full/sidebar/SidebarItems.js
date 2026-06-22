@@ -7,6 +7,7 @@ import NavGroup from './NavGroup/NavGroup';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../../slices/authSlice';
 import { useLogoutMutation } from '../../../slices/usersApiSlice';
+import { apiSlice } from '../../../slices/apiSlice';
 
 const SidebarItems = ({ isBottomMenu = false, onSidebarClose }) => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -20,11 +21,9 @@ const SidebarItems = ({ isBottomMenu = false, onSidebarClose }) => {
     try {
       await logoutApiCall().unwrap();
       dispatch(logout());
+      dispatch(apiSlice.util.resetApiState());
       navigate('/auth/login');
-      // Close sidebar on mobile after logout
-      if (onSidebarClose) {
-        onSidebarClose();
-      }
+      if (onSidebarClose) onSidebarClose();
     } catch (err) {
       console.error('Logout error:', err);
     }

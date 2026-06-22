@@ -406,19 +406,25 @@ const TestPage = () => {
       )}
 
       {/* ── Main layout ── */}
-      <Box pt={{ xs: '56px', md: '3rem' }}>
+      <Box
+        pt={{ xs: '56px', md: '3rem' }}
+        sx={{
+          // Use dynamic viewport height so mobile browser chrome doesn't overlap
+          minHeight: { xs: '100dvh', md: 'auto' },
+        }}
+      >
         <Grid container spacing={{ xs: 0, md: 3 }}>
           {/* Question area */}
           <Grid item xs={12} md={7} lg={7}>
             <BlankCard>
               <Box
                 width="100%"
-                minHeight={{ xs: 'calc(100vh - 56px)', md: '500px' }}
+                minHeight={{ xs: 'calc(100dvh - 56px)', md: '500px' }}
                 display="flex"
                 flexDirection="column"
                 alignItems="center"
                 justifyContent="flex-start"
-                p={{ xs: 2, md: 3 }}
+                p={{ xs: 0, md: 3 }}
                 sx={{ backgroundColor: 'white' }}
               >
                 <MultipleChoiceQuestion

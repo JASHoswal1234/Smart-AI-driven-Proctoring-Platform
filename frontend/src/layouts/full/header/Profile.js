@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { logout } from './../../../slices/authSlice';
 import { useLogoutMutation } from './../../../slices/usersApiSlice';
+import { apiSlice } from './../../../slices/apiSlice';
 
 const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
@@ -42,6 +43,7 @@ const Profile = () => {
     try {
       await logoutApiCall().unwrap();
       dispatch(logout());
+      dispatch(apiSlice.util.resetApiState());
       navigate('/auth/login');
     } catch (err) {}
   };
