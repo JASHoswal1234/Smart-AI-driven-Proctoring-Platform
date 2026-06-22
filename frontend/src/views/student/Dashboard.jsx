@@ -12,6 +12,7 @@ import axiosInstance from '../../axios';
 
 const Dashboard = () => {
   const { userInfo } = useSelector((state) => state.auth);
+  const examPhoto = userInfo?._id ? localStorage.getItem(`examPhoto_${userInfo._id}`) : null;
   const { data: userExams } = useGetExamsQuery();
   const { data: userResults } = useGetUserResultsQuery();
   const navigate = useNavigate();
@@ -103,15 +104,17 @@ const Dashboard = () => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             <Avatar
+              src={examPhoto || undefined}
               sx={{
                 width: 72,
                 height: 72,
                 bgcolor: '#003974',
                 fontSize: '32px',
-                fontWeight: 700
+                fontWeight: 700,
+                border: examPhoto ? '3px solid #16a34a' : 'none',
               }}
             >
-              {userInfo?.name?.charAt(0).toUpperCase()}
+              {!examPhoto && userInfo?.name?.charAt(0).toUpperCase()}
             </Avatar>
             <Box>
               <Typography variant="h3" sx={{ fontWeight: 700, color: '#0F2242', mb: 0.5, fontSize: '32px' }}>

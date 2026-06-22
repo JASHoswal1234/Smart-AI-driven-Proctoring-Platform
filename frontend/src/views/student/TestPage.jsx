@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box, Grid, CircularProgress, Typography, IconButton,
-  Drawer, AppBar, Toolbar, useMediaQuery, useTheme, Button,
+  Drawer, AppBar, Toolbar, useMediaQuery, useTheme, Button, Avatar, Stack,
 } from '@mui/material';
 import GridViewIcon from '@mui/icons-material/GridView';
 import PageContainer from 'src/components/container/PageContainer';
@@ -53,6 +53,7 @@ const TestPage = () => {
   const [examDurationInSeconds, setExamDurationInSeconds] = useState(0);
   const { data: userExamdata, isLoading: isExamsLoading } = useGetExamsQuery();
   const { userInfo } = useSelector((state) => state.auth);
+  const examPhoto = userInfo?._id ? localStorage.getItem(`examPhoto_${userInfo._id}`) : null;
   const { cheatingLog, updateCheatingLog } = useCheatingLog();
   const [saveCheatingLogMutation] = useSaveCheatingLogMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -384,6 +385,19 @@ const TestPage = () => {
             >
               {isSubmitting ? '...' : 'Submit'}
             </Button>
+
+            {/* Student identity */}
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ ml: 1, flexShrink: 0 }}>
+              <Avatar
+                src={examPhoto || undefined}
+                sx={{ width: 30, height: 30, border: '2px solid rgba(255,255,255,0.5)', fontSize: '0.75rem', backgroundColor: '#0056b3' }}
+              >
+                {!examPhoto && userInfo?.name?.charAt(0).toUpperCase()}
+              </Avatar>
+              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, fontSize: '0.7rem', maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {userInfo?.name?.split(' ')[0]}
+              </Typography>
+            </Stack>
           </Toolbar>
         </AppBar>
       )}
@@ -469,9 +483,22 @@ const TestPage = () => {
                 <Grid item xs={12}>
                   <BlankCard>
                     <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#003974', borderRadius: '8px' }}>
-                      <Typography variant="body2" fontWeight={700} sx={{ color: '#fff' }}>
-                        Q {currentQuestion + 1}/{questions.length}
-                      </Typography>
+                      {/* Student identity */}
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Avatar
+                          src={examPhoto || undefined}
+                          sx={{ width: 34, height: 34, border: '2px solid rgba(255,255,255,0.5)', fontSize: '0.85rem', backgroundColor: '#0056b3' }}
+                        >
+                          {!examPhoto && userInfo?.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', display: 'block', lineHeight: 1 }}>Student</Typography>
+                          <Typography variant="body2" fontWeight={700} sx={{ color: '#fff', fontSize: '0.8rem', lineHeight: 1.2 }}>
+                            {userInfo?.name?.split(' ').slice(0, 2).join(' ')}
+                          </Typography>
+                        </Box>
+                      </Stack>
+
                       <Typography variant="body2" fontWeight={700} sx={{ color: '#fff' }}>
                         ⏱ {timeFormatted}
                       </Typography>
@@ -480,7 +507,7 @@ const TestPage = () => {
                         size="small"
                         onClick={() => handleTestSubmission(false)}
                         disabled={isSubmitting}
-                        sx={{ backgroundColor: '#e53935', '&:hover': { backgroundColor: '#b71c1c' }, fontSize: '0.75rem' }}
+                        sx={{ backgroundColor: '#e53935', '&:hover': { backgroundColor: '#b71c1c' }, fontSize: '0.75rem', borderRadius: '8px' }}
                       >
                         {isSubmitting ? 'Submitting...' : 'Submit Test'}
                       </Button>

@@ -6,11 +6,12 @@ import {
   ListItemText,
   Stack,
   Typography,
+  Chip,
+  Box,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
-import { uniqueId } from 'lodash';import * as React from 'react';
+import * as React from 'react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -84,104 +85,79 @@ const DescriptionAndInstructions = () => {
     );
   }
 
+  const instructions = [
+    `${mcqCount > 0 ? `${mcqCount} MCQ` : ''}${mcqCount > 0 && subjectiveCount > 0 ? ' + ' : ''}${subjectiveCount > 0 ? `${subjectiveCount} Subjective` : ''}${hasCodingQuestions ? ' + Coding questions' : ''} — answer all to the best of your ability.`,
+    'Your webcam will monitor you throughout the exam.',
+    'Do not switch tabs or minimize the window — violations are recorded.',
+    'Each violation counts toward termination (max 5).',
+    'Screenshots may be taken automatically on violation.',
+    'Use Next to advance. Submit Test when done.',
+    'Results will be available after submission.',
+  ];
+
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h2" mb={3}>
-          Description
-        </Typography>
-        <Typography>
-          This exam will test your knowledge through various question types. 
-          {mcqCount > 0 && ` It includes ${mcqCount} multiple choice question${mcqCount > 1 ? 's' : ''}.`}
-          {subjectiveCount > 0 && ` It includes ${subjectiveCount} subjective question${subjectiveCount > 1 ? 's' : ''}.`}
-          {hasCodingQuestions && ` It also includes coding questions.`}
-          {' '}We recommend you to read all instructions carefully before starting the test.
-        </Typography>
+    <Box sx={{ p: { xs: 3, md: 4 }, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      {/* Title */}
+      <Typography variant="h4" fontWeight={700} color="#003974" mb={0.5}>Exam Instructions</Typography>
+      <Typography variant="body2" color="text.secondary" mb={3}>
+        Read carefully before starting. You cannot pause once the exam begins.
+      </Typography>
 
+      {/* Stats chips */}
+      <Stack direction="row" spacing={1} flexWrap="wrap" mb={3}>
+        {mcqCount > 0    && <Chip label={`${mcqCount} MCQ`} size="small" sx={{ backgroundColor: '#EEF3FB', color: '#003974', fontWeight: 700 }} />}
+        {subjectiveCount > 0 && <Chip label={`${subjectiveCount} Subjective`} size="small" sx={{ backgroundColor: '#fef9c3', color: '#854d0e', fontWeight: 700 }} />}
+        {hasCodingQuestions  && <Chip label="Coding" size="small" sx={{ backgroundColor: '#f0fdf4', color: '#166534', fontWeight: 700 }} />}
+        <Chip label={`${questions?.length || 0} Total Questions`} size="small" variant="outlined" sx={{ fontWeight: 700 }} />
+      </Stack>
 
-        <>
-          <Typography variant="h3" mb={3} mt={3}>
-            Test Instructions
-          </Typography>
-          <List>
-            <ol>
-              <li>
-                <ListItemText>
-                  <Typography variant="body1">
-                    This exam consists of {mcqCount > 0 && `${mcqCount} MCQ question${mcqCount > 1 ? 's' : ''}`}
-                    {mcqCount > 0 && subjectiveCount > 0 && ', '}
-                    {subjectiveCount > 0 && `${subjectiveCount} subjective question${subjectiveCount > 1 ? 's' : ''}`}
-                    {hasCodingQuestions && ', and coding questions'}.
-                  </Typography>
-                </ListItemText>
+      {/* Instructions list */}
+      <Box
+        sx={{
+          backgroundColor: '#f8faff',
+          border: '1px solid #e8eaf0',
+          borderRadius: '12px',
+          p: 2.5,
+          mb: 3,
+        }}
+      >
+        <List disablePadding>
+          <ol style={{ margin: 0, paddingLeft: '1.25rem' }}>
+            {instructions.map((text, i) => (
+              <li key={i} style={{ marginBottom: '10px' }}>
+                <Typography variant="body2" color="#374151" lineHeight={1.6}>{text}</Typography>
               </li>
-              <li>
-                <ListItemText>
-                  <Typography variant="body1">
-                    There are a total of <strong>{questions?.length || 0} questions.</strong>
-                  </Typography>
-                </ListItemText>
-              </li>
-              <li>
-                <ListItemText>
-                  <Typography variant="body1">
-                    Answer all questions to the best of your ability.
-                  </Typography>
-                </ListItemText>
-              </li>
-              <li>
-                <ListItemText>
-                  <Typography variant="body1">
-                    Your webcam will monitor you during the exam for proctoring purposes.
-                  </Typography>
-                </ListItemText>
-              </li>
-              <li>
-                <ListItemText>
-                  <Typography variant="body1">
-                    You may need to use blank sheets for rough work. Please arrange for blank sheets
-                    before starting.
-                  </Typography>
-                </ListItemText>
-              </li>
-              <li>
-                <ListItemText>
-                  <Typography variant="body1">
-                    Click Next to move to the next question. Your answers are saved automatically.
-                  </Typography>
-                </ListItemText>
-              </li>
-              <li>
-                <ListItemText>
-                  <Typography variant="body1">
-                    Click Submit Test when you complete all questions.
-                  </Typography>
-                </ListItemText>
-              </li>
-              <li>
-                <ListItemText>
-                  <Typography variant="body1">
-                    You will be able to view the scores once your test is complete.
-                  </Typography>
-                </ListItemText>
-              </li>
-            </ol>
-          </List>
-        </>
-        <Typography variant="h3" mb={3} mt={3}>
-          Confirmation
+            ))}
+          </ol>
+        </List>
+      </Box>
+
+      {/* Proctoring notice */}
+      <Box sx={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', px: 2, py: 1.5, mb: 3 }}>
+        <Typography variant="body2" color="#c2410c" fontWeight={600}>
+          ⚠ Proctoring Active
         </Typography>
-        <Typography mb={3}>
-          Your actions shall be proctored and any signs of wrongdoing may lead to suspension or
-          cancellation of your test.
+        <Typography variant="body2" color="#9a3412" mt={0.25}>
+          Your actions will be monitored. Misconduct may result in test cancellation.
         </Typography>
-        <Stack direction="column" alignItems="center" spacing={3}>
-          <Button variant="contained" color="primary" onClick={handleTest}>
-            Proceed to System Check
-          </Button>
-        </Stack>
-      </CardContent>
-    </Card>
+      </Box>
+
+      <Button
+        variant="contained"
+        size="large"
+        onClick={handleTest}
+        sx={{
+          backgroundColor: '#003974',
+          borderRadius: '12px',
+          fontWeight: 700,
+          py: 1.5,
+          fontSize: '1rem',
+          '&:hover': { backgroundColor: '#002a54' },
+        }}
+      >
+        Proceed to System Check →
+      </Button>
+    </Box>
   );
 };
 
@@ -189,26 +165,24 @@ const imgUrl = '/image.png';
 
 export default function ExamDetails() {
   return (
-    <>
-      <Grid container sx={{ height: '100vh' }}>
-        <Grid
-          item
-          xs={false}
-          sm={4}
-          md={7}
-          sx={{
-            backgroundImage: `url(${imgUrl})`, // 'url(https://source.unsplash.com/random?wallpapers)',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: (t) =>
-              t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
-          <DescriptionAndInstructions />
-        </Grid>
+    <Grid container sx={{ height: '100vh' }}>
+      <Grid
+        item xs={false} sm={4} md={7}
+        sx={{
+          backgroundImage: `url(${imgUrl})`,
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: (t) => t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      <Grid
+        item xs={12} sm={8} md={5}
+        component={Paper} elevation={0} square
+        sx={{ overflowY: 'auto', borderLeft: '1px solid #e8eaf0' }}
+      >
+        <DescriptionAndInstructions />
       </Grid>
-    </>
+    </Grid>
   );
 }
