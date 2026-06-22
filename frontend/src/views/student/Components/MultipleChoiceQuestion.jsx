@@ -21,7 +21,7 @@ import { useCheatingLog } from 'src/context/CheatingLogContext';
 import { useSaveCheatingLogMutation } from 'src/slices/cheatingLogApiSlice';
 import { useSelector } from 'react-redux';
 
-export default function MultipleChoiceQuestion({ questions, saveUserTestScore, submitTest, answersRef }) {
+export default function MultipleChoiceQuestion({ questions, saveUserTestScore, submitTest, answersRef, onQuestionChange, onAnsweredChange }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [subjectiveAnswer, setSubjectiveAnswer] = useState('');
@@ -31,6 +31,7 @@ export default function MultipleChoiceQuestion({ questions, saveUserTestScore, s
   const [answers, setAnswers] = useState(new Map());
   const [subjectiveAnswers, setSubjectiveAnswers] = useState({});
   const [codingAnswers, setCodingAnswers] = useState({});
+  const [answeredIndices, setAnsweredIndices] = useState([]);
   const navigate = useNavigate();
   const { examId } = useParams();
   const { cheatingLog } = useCheatingLog();
@@ -40,11 +41,13 @@ export default function MultipleChoiceQuestion({ questions, saveUserTestScore, s
   const [isLastQuestion, setIsLastQuestion] = useState(false);
 
   useEffect(() => {
-    console.log('Current question index:', currentQuestion);
-    console.log('Total questions:', questions?.length);
-    console.log('Current question data:', questions?.[currentQuestion]);
     setIsLastQuestion(currentQuestion === questions.length - 1);
-  }, [currentQuestion, questions]);
+    if (onQuestionChange) onQuestionChange(currentQuestion);
+  }, [currentQuestion, questions, onQuestionChange]);
+
+  useEffect(() => {
+    if (onAnsweredChange) onAnsweredChange(answeredIndices);
+  }, [answeredIndices, onAnsweredChange]);
 
   const handleOptionChange = (event) => {
     setSelectedOption(event.target.value);
@@ -57,117 +60,38 @@ export default function MultipleChoiceQuestion({ questions, saveUserTestScore, s
     }
   }, [answers, answersRef]);
 
-  const handleNextQuestion = async () => {
+  const handleNextQuestion = () => {
     const currentQuestionData = questions[currentQuestion];
-    
-    // Handle MCQ (default if questionType is not set or is 'mcq')
+
+    // Save answer for current question
     if (!currentQuestionData.questionType || currentQuestionData.questionType === 'mcq') {
-      let isCorrect = false;
-      if (currentQuestionData && currentQuestionData.options) {
-        const correctOption = currentQuestionData.options.find((option) => option.isCorrect);
-        if (correctOption && selectedOption) {
-          isCorrect = correctOption._id === selectedOption;
+      if (selectedOption) {
+        const correctOption = currentQuestionData.options?.find((o) => o.isCorrect);
+        if (correctOption && correctOption._id === selectedOption) {
+          setScore((s) => s + 1);
+          saveUserTestScore();
         }
+        setAnswers((prev) => {
+          const next = new Map(prev);
+          next.set(currentQuestionData._id, selectedOption);
+          return next;
+        });
       }
-
-      setAnswers((prev) => {
-        const newAnswers = new Map(prev);
-        newAnswers.set(currentQuestionData._id, selectedOption);
-        return newAnswers;
-      });
-
-      if (isCorrect) {
-        setScore(score + 1);
-        saveUserTestScore();
-      }
-    } 
-    // Handle Subjective
-    else if (currentQuestionData.questionType === 'subjective') {
-      setSubjectiveAnswers((prev) => ({
-        ...prev,
-        [currentQuestionData._id]: subjectiveAnswer,
-      }));
-    }
-    // Handle Coding
-    else if (currentQuestionData.questionType === 'coding') {
+    } else if (currentQuestionData.questionType === 'subjective' && subjectiveAnswer.trim()) {
+      setSubjectiveAnswers((prev) => ({ ...prev, [currentQuestionData._id]: subjectiveAnswer }));
+    } else if (currentQuestionData.questionType === 'coding' && codingAnswer.trim()) {
       setCodingAnswers((prev) => ({
         ...prev,
-        [currentQuestionData._id]: {
-          code: codingAnswer,
-          language: codingLanguage,
-        },
+        [currentQuestionData._id]: { code: codingAnswer, language: codingLanguage },
       }));
     }
 
-    if (isLastQuestion) {
-      // Save cheating log FIRST before anything else
-      try {
-        const updatedLog = {
-          ...cheatingLog,
-          username: userInfo.name,
-          email: userInfo.email,
-          examId: examId,
-          noFaceCount: parseInt(cheatingLog.noFaceCount) || 0,
-          multipleFaceCount: parseInt(cheatingLog.multipleFaceCount) || 0,
-          cellPhoneCount: parseInt(cheatingLog.cellPhoneCount) || 0,
-          prohibitedObjectCount: parseInt(cheatingLog.prohibitedObjectCount) || 0,
-          tabSwitchCount: parseInt(cheatingLog.tabSwitchCount) || 0,
-        };
-        
-        console.log('[MCQ] === SAVING CHEATING LOG ===');
-        console.log('[MCQ] Data to save:', updatedLog);
-        const result = await saveCheatingLogMutation(updatedLog).unwrap();
-        console.log('[MCQ] ✓ Cheating log saved successfully. Response:', result);
-        console.log('[MCQ] Saved log ID:', result._id);
-      } catch (logError) {
-        console.error('[MCQ] ✗ Failed to save cheating log');
-        console.error('[MCQ] Error:', logError);
-        console.error('[MCQ] Error data:', logError.data);
-        console.error('[MCQ] Error status:', logError.status);
-        toast.error('Failed to save exam logs');
-      }
+    // Mark current index as answered
+    setAnsweredIndices((prev) =>
+      prev.includes(currentQuestion) ? prev : [...prev, currentQuestion]
+    );
 
-      try {
-        const answersObject = Object.fromEntries(answers);
-        if (selectedOption && (!currentQuestionData.questionType || currentQuestionData.questionType === 'mcq')) {
-          answersObject[currentQuestionData._id] = selectedOption;
-        }
-
-        const finalSubjectiveAnswers = { ...subjectiveAnswers };
-        if (subjectiveAnswer && currentQuestionData.questionType === 'subjective') {
-          finalSubjectiveAnswers[currentQuestionData._id] = subjectiveAnswer;
-        }
-
-        const finalCodingAnswers = { ...codingAnswers };
-        if (codingAnswer && currentQuestionData.questionType === 'coding') {
-          finalCodingAnswers[currentQuestionData._id] = {
-            code: codingAnswer,
-            language: codingLanguage,
-          };
-        }
-
-        await axiosInstance.post(
-          '/api/users/results',
-          {
-            examId,
-            answers: answersObject,
-            subjectiveAnswers: finalSubjectiveAnswers,
-            codingAnswers: finalCodingAnswers,
-          },
-          {
-            withCredentials: true,
-          },
-        );
-
-        // Always navigate to success page after submission
-        toast.success('Test submitted successfully!');
-        navigate('/Success');
-      } catch (error) {
-        console.error('Error saving results:', error);
-        toast.error('Failed to save results');
-      }
-    }
-
+    // Advance to next question (stop at last)
     setSelectedOption(null);
     setSubjectiveAnswer('');
     setCodingAnswer('');
@@ -342,7 +266,7 @@ export default function MultipleChoiceQuestion({ questions, saveUserTestScore, s
                   fontSize: { xs: '0.875rem', md: '1rem' },
                 }}
               >
-                {isLastQuestion ? 'Submit Test' : 'Next Question'}
+                {isLastQuestion ? 'Save Answer' : 'Next Question'}
               </Button>
             </Box>
           </>

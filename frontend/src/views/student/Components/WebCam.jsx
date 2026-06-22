@@ -13,7 +13,7 @@ const COOLDOWN_MS = 8000;
 // Frames looking away before triggering
 const AWAY_FRAME_THRESHOLD = 20;
 
-export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate }) {
+export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, compact = false }) {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   const faceMeshRef = useRef(null);
@@ -223,6 +223,25 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate }) 
   }, [handleViolation]);
 
   const totalViolations = cheatingLog.totalViolations || 0;
+
+  // Compact mode: tiny square for mobile toolbar
+  if (compact) {
+    return (
+      <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Webcam
+          ref={webcamRef}
+          audio={false}
+          muted
+          videoConstraints={{ width: 120, height: 120, facingMode: 'user' }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+        <canvas
+          ref={canvasRef}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10 }}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Box>
