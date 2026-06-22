@@ -68,7 +68,44 @@ const TestPage = () => {
   const [answeredQuestions, setAnsweredQuestions] = useState([]);
   const [questionPanelOpen, setQuestionPanelOpen] = useState(false);
 
+  // All refs declared up front so event handlers always have stable references
+  const terminatedRef        = useRef(false);
+  const lastTabSwitchTimeRef = useRef(0);
+  const cheatingLogRef       = useRef(cheatingLog);
+  const [shouldTerminate, setShouldTerminate] = useState(false);
+
+  useEffect(() => { cheatingLogRef.current = cheatingLog; }, [cheatingLog]);
+
   const { timeLeft, formatted: timeFormatted } = useExamTimer(examDurationInSeconds);
+
+  // ── Back button / navigation guard ─────────────────────────────────────────
+  useEffect(() => {
+    // Push a dummy history entry so the first back-press lands here
+    window.history.pushState({ examActive: true }, '');
+
+    const handlePopState = () => {
+      if (terminatedRef.current) return; // exam over — allow normal navigation
+
+      // Immediately re-push to block further back presses
+      window.history.pushState({ examActive: true }, '');
+
+      const now = Date.now();
+      if (now - lastTabSwitchTimeRef.current < 2000) return;
+      lastTabSwitchTimeRef.current = now;
+
+      const newCount = (cheatingLogRef.current.totalViolations || 0) + 1;
+      updateCheatingLog((prev) => ({ ...prev, totalViolations: newCount }));
+
+      swal(
+        'Navigation Blocked!',
+        `Pressing back during the exam is not allowed.\nViolation ${newCount}/5 recorded.`,
+        'warning',
+      );
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-submit when timer hits 0
   useEffect(() => {
@@ -177,9 +214,6 @@ const TestPage = () => {
   }, [userExamdata, examId]);
 
   // Tab/focus/fullscreen violations
-  const terminatedRef = useRef(false);
-  const [shouldTerminate, setShouldTerminate] = useState(false);
-
   useEffect(() => {
     const guard = () => terminatedRef.current || (cheatingLog.totalViolations || 0) >= 5;
     const bump = (title, msg) => {
