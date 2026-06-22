@@ -2,20 +2,15 @@ import {
   Button,
   Card,
   CardContent,
-  Checkbox,
-  FormControlLabel,
   List,
-  ListItem,
   ListItemText,
-  Radio,
   Stack,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
-import { uniqueId } from 'lodash';
-import * as React from 'react';
+import { uniqueId } from 'lodash';import * as React from 'react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -59,7 +54,6 @@ const DescriptionAndInstructions = () => {
   }, [examId]);
   const { data: questions, isLoading, isError } = useGetQuestionsQuery(examId);
   const [hasCodingQuestions, setHasCodingQuestions] = useState(false);
-  const [examData, setExamData] = useState(null);
 
   // Check if exam has coding questions
   React.useEffect(() => {
@@ -75,21 +69,8 @@ const DescriptionAndInstructions = () => {
     checkCodingQuestions();
   }, [examId]);
 
-  const testId = uniqueId();
-  const [certify, setCertify] = useState(false);
-  
-  const handleCertifyChange = () => {
-    setCertify(!certify);
-  };
-  
   const handleTest = () => {
-    const isValid = true;
-    console.log('Test link');
-    if (isValid) {
-      navigate(`/exam/${examId}/${testId}`);
-    } else {
-      toast.error('Test date is not valid.');
-    }
+    navigate(`/exam/${examId}/system-check`);
   };
 
   const mcqCount = questions?.filter(q => !q.questionType || q.questionType === 'mcq').length || 0;
@@ -195,15 +176,9 @@ const DescriptionAndInstructions = () => {
           cancellation of your test.
         </Typography>
         <Stack direction="column" alignItems="center" spacing={3}>
-          <FormControlLabel
-            control={<Checkbox checked={certify} onChange={handleCertifyChange} color="primary" />}
-            label="I certify that I have carefully read and agree to all of the instructions mentioned above"
-          />
-          <div style={{ display: 'flex', padding: '2px', margin: '10px' }}>
-            <Button variant="contained" color="primary" disabled={!certify} onClick={handleTest}>
-              Start Test
-            </Button>
-          </div>
+          <Button variant="contained" color="primary" onClick={handleTest}>
+            Proceed to System Check
+          </Button>
         </Stack>
       </CardContent>
     </Card>

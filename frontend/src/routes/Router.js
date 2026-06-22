@@ -15,6 +15,7 @@ import Dashboard from '../views/student/Dashboard';
 import TestPage from '../views/student/TestPage';
 import ExamPage from '../views/student/ExamPage';
 import ExamDetails from '../views/student/ExamDetails';
+import SystemCheck from '../views/student/SystemCheck';
 import CodeDetails from '../views/student/CodeDetails';
 import ResultPage from '../views/student/ResultPage';
 import ExamAnalyticsPage from '../views/student/ExamAnalyticsPage';
@@ -58,6 +59,7 @@ const Router = createBrowserRouter(
         </Route>
         <Route element={<ExamLayout />}>
           <Route path="exam/:examId" element={<ExamDetails />} />
+          <Route path="exam/:examId/system-check" element={<SystemCheck />} />
           <Route path="exam/:examId/codedetails" element={<CodeDetails />} />
           <Route path="exam/:examId/:testId" element={<TestPage />} />
           <Route path="exam/:examId/code" element={<Coder />} />
