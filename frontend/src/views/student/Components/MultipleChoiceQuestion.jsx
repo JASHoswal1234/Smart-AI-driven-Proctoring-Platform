@@ -179,22 +179,26 @@ export default function MultipleChoiceQuestion({ questions, saveUserTestScore, s
 
   return (
     <Card
-      style={{
-        width: '50%',
-        boxShadow: '2px',
+      sx={{
+        width: { xs: '100%', md: '90%', lg: '80%' },
+        boxShadow: 2,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <CardContent
-        style={{
-          boxShadow: '4px',
-          padding: '2px',
-          paddingRight: '4px',
-          margin: '3px',
+        sx={{
+          boxShadow: 0,
+          p: { xs: 2, md: 3 },
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {questions && questions.length > 0 ? (
           <>
-            <Typography variant="h4" mb={3}>
+            <Typography variant="h4" mb={3} sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
               Question {currentQuestion + 1}:
               {questions[currentQuestion]?.questionType === 'subjective' && (
                 <Chip label={`${questions[currentQuestion].ansmarks} marks`} color="primary" size="small" sx={{ ml: 2 }} />
@@ -245,7 +249,8 @@ export default function MultipleChoiceQuestion({ questions, saveUserTestScore, s
               </Box>
             )}
             
-            <Box mb={10}>
+            {/* Content area - grows to fill space */}
+            <Box flex={1} mb={2}>
               {questions[currentQuestion]?.questionType === 'subjective' ? (
                 <TextField
                   fullWidth
@@ -317,7 +322,9 @@ export default function MultipleChoiceQuestion({ questions, saveUserTestScore, s
                 </FormControl>
               )}
             </Box>
-            <Stack direction="row" spacing={2} justifyContent="space-between">
+            
+            {/* Button anchored to bottom right */}
+            <Box display="flex" justifyContent="flex-end" mt="auto">
               <Button
                 variant="contained"
                 color="primary"
@@ -329,11 +336,15 @@ export default function MultipleChoiceQuestion({ questions, saveUserTestScore, s
                     ? codingAnswer.trim() === ''
                     : selectedOption === null
                 }
-                style={{ marginLeft: 'auto' }}
+                sx={{
+                  px: { xs: 3, md: 4 },
+                  py: { xs: 1, md: 1.5 },
+                  fontSize: { xs: '0.875rem', md: '1rem' },
+                }}
               >
                 {isLastQuestion ? 'Submit Test' : 'Next Question'}
               </Button>
-            </Stack>
+            </Box>
           </>
         ) : (
           <Typography>No questions available</Typography>

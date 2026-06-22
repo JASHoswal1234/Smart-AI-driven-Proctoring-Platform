@@ -8,7 +8,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../../slices/authSlice';
 import { useLogoutMutation } from '../../../slices/usersApiSlice';
 
-const SidebarItems = ({ isBottomMenu = false }) => {
+const SidebarItems = ({ isBottomMenu = false, onSidebarClose }) => {
   const { userInfo } = useSelector((state) => state.auth);
   const { pathname } = useLocation();
   const pathDirect = pathname;
@@ -21,6 +21,10 @@ const SidebarItems = ({ isBottomMenu = false }) => {
       await logoutApiCall().unwrap();
       dispatch(logout());
       navigate('/auth/login');
+      // Close sidebar on mobile after logout
+      if (onSidebarClose) {
+        onSidebarClose();
+      }
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -29,6 +33,11 @@ const SidebarItems = ({ isBottomMenu = false }) => {
   const handleItemClick = (item) => {
     if (item.isLogout) {
       handleLogout();
+    } else {
+      // Close sidebar on mobile after navigation
+      if (onSidebarClose) {
+        onSidebarClose();
+      }
     }
   };
 

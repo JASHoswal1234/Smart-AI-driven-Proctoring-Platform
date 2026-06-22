@@ -558,18 +558,23 @@ const TestPage = () => {
 
   return (
     <PageContainer title="TestPage" description="This is TestPage">
-      <Box pt="3rem">
-        <Grid container spacing={3}>
+      <Box pt={{ xs: 0, md: '3rem' }} px={{ xs: 0, md: 0 }}>
+        <Grid container spacing={{ xs: 0, md: 3 }}>
+          {/* Questions Section - Full width on mobile, no padding */}
           <Grid item xs={12} md={7} lg={7}>
-            <BlankCard>
+            <BlankCard sx={{ height: { xs: 'auto', md: 'auto' } }}>
               <Box
                 width="100%"
-                minHeight="400px"
-                boxShadow={3}
+                minHeight={{ xs: 'calc(100vh - 380px)', md: '500px' }}
+                boxShadow={{ xs: 0, md: 3 }}
                 display="flex"
                 flexDirection="column"
                 alignItems="center"
-                justifyContent="center"
+                justifyContent="flex-start"
+                p={{ xs: 2, md: 3 }}
+                sx={{
+                  backgroundColor: 'white',
+                }}
               >
                 {isLoading || isCodingLoading ? (
                   <CircularProgress />
@@ -584,19 +589,21 @@ const TestPage = () => {
               </Box>
             </BlankCard>
           </Grid>
+          
+          {/* Sidebar Section - Full width on mobile */}
           <Grid item xs={12} md={5} lg={5}>
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 0, md: 3 }}>
+              {/* Timer & Question Counter */}
               <Grid item xs={12}>
-                <BlankCard>
+                <BlankCard sx={{ mt: { xs: 0, md: 0 } }}>
                   <Box
-                    maxHeight="300px"
                     sx={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'start',
                       justifyContent: 'center',
-                      overflowY: 'auto',
                       height: '100%',
+                      backgroundColor: 'white',
                     }}
                   >
                     <NumberOfQuestions
@@ -607,21 +614,27 @@ const TestPage = () => {
                   </Box>
                 </BlankCard>
               </Grid>
-              <Grid item xs={12}>
+              
+              {/* WebCam - Full width on mobile */}
+              <Grid item xs={12} sx={{ mt: { xs: 0, md: 0 } }}>
                 <BlankCard>
                   <Box
-                    width="300px"
-                    maxHeight="180px"
-                    boxShadow={3}
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="start"
-                    justifyContent="center"
+                    sx={{
+                      width: '100%',
+                      height: { xs: '200px', md: '180px' },
+                      boxShadow: { xs: 0, md: 3 },
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      backgroundColor: '#000',
+                    }}
                   >
-                <WebCam
-                    cheatingLog={cheatingLog}
-                    updateCheatingLog={updateCheatingLog}
-                  />
+                    <WebCam
+                      cheatingLog={cheatingLog}
+                      updateCheatingLog={updateCheatingLog}
+                    />
                   </Box>
                 </BlankCard>
               </Grid>

@@ -73,14 +73,14 @@ const Sidebar = (props) => {
             {/* Main Menu Items */}
             {/* ------------------------------------------- */}
             <Box sx={{ flex: 1, overflow: 'auto' }}>
-              <SidebarItems />
+              <SidebarItems onSidebarClose={() => {}} />
             </Box>
 
             {/* ------------------------------------------- */}
             {/* Bottom Menu Items (Settings & Logout) */}
             {/* ------------------------------------------- */}
             <Box sx={{ borderTop: '1px solid #ECECEC', pt: 2, pb: 2 }}>
-              <SidebarItems isBottomMenu={true} />
+              <SidebarItems isBottomMenu={true} onSidebarClose={() => {}} />
             </Box>
           </Box>
         </Drawer>
@@ -144,14 +144,14 @@ const Sidebar = (props) => {
         {/* Main Menu Items */}
         {/* ------------------------------------------- */}
         <Box sx={{ flex: 1, overflow: 'auto' }}>
-          <SidebarItems />
+          <SidebarItems onSidebarClose={props.onSidebarClose} />
         </Box>
 
         {/* ------------------------------------------- */}
         {/* Bottom Menu Items (Settings & Logout) */}
         {/* ------------------------------------------- */}
         <Box sx={{ borderTop: '1px solid #ECECEC', pt: 2, pb: 2 }}>
-          <SidebarItems isBottomMenu={true} />
+          <SidebarItems isBottomMenu={true} onSidebarClose={props.onSidebarClose} />
         </Box>
       </Box>
     </Drawer>

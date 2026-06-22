@@ -59,31 +59,90 @@ const NumberOfQuestions = ({ questionLength, submitTest, examDurationInSeconds }
 
   return (
     <>
-      <Box position="sticky" top="0" zIndex={1} bgcolor="white" paddingY="10px" width="100%" px={3}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">Questions: 1/{totalQuestions}</Typography>
-          <Typography variant="h6">Time Left: {formatTime(timeLeft)}</Typography>
-          <Button variant="contained" onClick={submitTest} color="error">
+      {/* Fixed header with consistent spacing */}
+      <Box 
+        position="sticky" 
+        top="0" 
+        zIndex={1} 
+        bgcolor="white" 
+        width="100%"
+        sx={{
+          py: { xs: 1.5, md: 2 },
+          px: { xs: 2, md: 3 },
+          borderBottom: '1px solid #e0e0e0',
+        }}
+      >
+        <Stack 
+          direction="row" 
+          alignItems="center" 
+          justifyContent="space-between"
+          spacing={2}
+          sx={{
+            flexWrap: { xs: 'nowrap', sm: 'nowrap' },
+          }}
+        >
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Questions: 1/{totalQuestions}
+          </Typography>
+          
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Time Left: {formatTime(timeLeft)}
+          </Typography>
+          
+          <Button 
+            variant="contained" 
+            onClick={submitTest} 
+            color="error"
+            sx={{
+              fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+              py: { xs: 0.75, md: 1 },
+              px: { xs: 1.5, md: 2 },
+              whiteSpace: 'nowrap',
+              minWidth: 'auto',
+            }}
+          >
             Finish Test
           </Button>
         </Stack>
       </Box>
 
-      <Box p={3} mt={5} maxHeight="270px">
+      {/* Question numbers grid */}
+      <Box 
+        sx={{
+          p: { xs: 2, md: 3 },
+          mt: { xs: 2, md: 3 },
+          maxHeight: { xs: '200px', md: '270px' },
+          overflowY: 'auto',
+        }}
+      >
         <Grid container spacing={1}>
           {rows.map((row, rowIndex) => (
             <Grid key={rowIndex} item xs={12}>
-              <Stack direction="row" alignItems="center" justifyContent="start">
+              <Stack direction="row" alignItems="center" justifyContent="start" flexWrap="wrap">
                 {row.map((questionNumber) => (
                   <Avatar
                     key={questionNumber}
                     variant="rounded"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      fontSize: '20px',
+                    sx={{
+                      width: { xs: '35px', md: '40px' },
+                      height: { xs: '35px', md: '40px' },
+                      fontSize: { xs: '16px', md: '20px' },
                       cursor: 'pointer',
-                      margin: '3px',
+                      m: 0.5,
                       background: '#ccc',
                     }}
                     onClick={() => handleQuestionButtonClick(questionNumber)}

@@ -514,82 +514,87 @@ const ResultPage = () => {
   if (userInfo?.role === 'student') {
     return (
       <PageContainer title="My Exam Results" description="View your exam results">
-        <Grid container spacing={3}>
-          {/* Summary Cards */}
-          <Grid item xs={12} md={3}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Total Exams Taken
-                </Typography>
-                <Typography variant="h3">{results.length}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Average Score
-                </Typography>
-                <Typography variant="h3">
-                  {results.length > 0
-                    ? `${(
-                        results.reduce((acc, curr) => acc + curr.percentage, 0) / results.length
-                      ).toFixed(1)}%`
-                    : '0%'}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Highest Score
-                </Typography>
-                <Typography variant="h3">
-                  {results.length > 0
-                    ? `${Math.max(...results.map((r) => r.percentage)).toFixed(1)}%`
-                    : '0%'}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Total Attempts
-                </Typography>
-                <Typography variant="h3">
-                  {results.length}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+        <Box sx={{ px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>
+          <Grid container spacing={{ xs: 2, md: 3 }}>
+            {/* Summary Cards - Stack on mobile, row on desktop */}
+            <Grid item xs={6} sm={6} md={3}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', md: '1rem' }, mb: 1 }} gutterBottom>
+                    Total Exams
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+                    {results.length}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={6} md={3}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', md: '1rem' }, mb: 1 }} gutterBottom>
+                    Avg Score
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+                    {results.length > 0
+                      ? `${(
+                          results.reduce((acc, curr) => acc + curr.percentage, 0) / results.length
+                        ).toFixed(1)}%`
+                      : '0%'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={6} md={3}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', md: '1rem' }, mb: 1 }} gutterBottom>
+                    Highest
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+                    {results.length > 0
+                      ? `${Math.max(...results.map((r) => r.percentage)).toFixed(1)}%`
+                      : '0%'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={6} md={3}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', md: '1rem' }, mb: 1 }} gutterBottom>
+                    Attempts
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+                    {results.length}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          {/* Analytics Toggle */}
-          <Grid item xs={12}>
-            <Button
-              variant="outlined"
-              startIcon={<Assessment />}
-              onClick={() => setShowAnalytics(!showAnalytics)}
-              fullWidth
-              sx={{
-                borderColor: '#003974',
-                color: '#003974',
-                fontWeight: 600,
-                '&:hover': {
-                  backgroundColor: '#003974',
-                  color: '#FFFFFF',
+            {/* Analytics Toggle */}
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                startIcon={<Assessment />}
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                fullWidth
+                sx={{
                   borderColor: '#003974',
-                },
-              }}
-            >
-              {showAnalytics ? 'Hide Analytics' : 'Show Detailed Analytics'}
-            </Button>
-          </Grid>
+                  color: '#003974',
+                  fontWeight: 600,
+                  py: { xs: 1, md: 1.5 },
+                  fontSize: { xs: '0.875rem', md: '1rem' },
+                  '&:hover': {
+                    backgroundColor: '#003974',
+                    color: '#FFFFFF',
+                    borderColor: '#003974',
+                  },
+                }}
+              >
+                {showAnalytics ? 'Hide Analytics' : 'Show Detailed Analytics'}
+              </Button>
+            </Grid>
 
           {/* Analytics Section */}
           {showAnalytics && (
@@ -602,19 +607,23 @@ const ResultPage = () => {
                 </Grid>
               ) : (
                 <>
-                  {/* Detailed Score Analysis */}
+                  {/* Detailed Score Analysis - Full width on mobile */}
                   <Grid item xs={12} md={6}>
                     <DashboardCard title="Score Breakdown by Exam">
-                      <ResponsiveContainer width="100%" height={320}>
-                        <BarChart data={getDetailedScoreAnalysis()} margin={{ top: 20, right: 20, left: 20, bottom: 35 }}>
+                      <ResponsiveContainer width="100%" height={{ xs: 250, md: 320 }}>
+                        <BarChart 
+                          data={getDetailedScoreAnalysis()} 
+                          margin={{ top: 20, right: { xs: 10, md: 20 }, left: { xs: 10, md: 20 }, bottom: 35 }}
+                          barSize={getDetailedScoreAnalysis().length === 1 ? 60 : undefined}
+                        >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
                             dataKey="exam" 
-                            tick={{ fontSize: 12 }}
+                            tick={{ fontSize: { xs: 10, md: 12 } }}
                             height={50}
-                            label={{ value: 'Tests', position: 'insideBottom', offset: -5, style: { fontSize: 13, fill: '#6B7280', fontWeight: 600 } }}
+                            label={{ value: 'Tests', position: 'insideBottom', offset: -5, style: { fontSize: { xs: 11, md: 13 }, fill: '#6B7280', fontWeight: 600 } }}
                           />
-                          <YAxis domain={[0, 100]} label={{ value: 'Score %', angle: -90, position: 'insideLeft' }} />
+                          <YAxis domain={[0, 100]} label={{ value: 'Score %', angle: -90, position: 'insideLeft' }} tick={{ fontSize: { xs: 10, md: 12 } }} />
                           <Tooltip 
                             formatter={(value, name, props) => {
                               if (name === 'Score %') return [`${value}%`, name];
@@ -627,17 +636,17 @@ const ResultPage = () => {
                               return label;
                             }}
                           />
-                          <Legend wrapperStyle={{ paddingTop: '10px' }} align="left" />
-                          <Bar dataKey="score" fill="#003974" name="Score %" radius={[8, 8, 0, 0]} minPointSize={5} />
+                          <Legend wrapperStyle={{ paddingTop: '10px', fontSize: { xs: '0.75rem', md: '0.875rem' } }} align="left" />
+                          <Bar dataKey="score" fill="#003974" name="Score %" radius={[8, 8, 0, 0]} minPointSize={5} maxBarSize={80} />
                         </BarChart>
                       </ResponsiveContainer>
                     </DashboardCard>
                   </Grid>
 
-                  {/* Grade Distribution Pie */}
+                  {/* Grade Distribution Pie - Full width on mobile */}
                   <Grid item xs={12} md={6}>
                     <DashboardCard title="Grade Distribution">
-                      <ResponsiveContainer width="100%" height={320}>
+                      <ResponsiveContainer width="100%" height={{ xs: 250, md: 320 }}>
                         <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                           <Pie
                             data={getGradeDistribution()}
@@ -695,8 +704,8 @@ const ResultPage = () => {
             </>
           )}
 
-          {/* Results Table */}
-          <Grid item xs={12}>
+          {/* Results Table - Desktop View */}
+          <Grid item xs={12} sx={{ display: { xs: 'none', md: 'block' } }}>
             <DashboardCard title="My Results">
               <TableContainer component={Paper}>
                 <Table>
@@ -768,7 +777,104 @@ const ResultPage = () => {
               </TableContainer>
             </DashboardCard>
           </Grid>
+
+          {/* Results Cards - Mobile View */}
+          <Grid item xs={12} sx={{ display: { xs: 'block', md: 'none' } }}>
+            <DashboardCard title="My Results">
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {results.map((result) => (
+                  <Card key={result._id} sx={{ border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <CardContent sx={{ p: 2 }}>
+                      {/* Exam Name */}
+                      <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1.5 }}>
+                        {exams.find((e) => e._id === result.examId || e.examId === result.examId)?.examName || 'Exam'}
+                      </Typography>
+
+                      {/* Score Badge */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                        <Typography variant="body2" color="textSecondary">Score</Typography>
+                        <Chip
+                          label={`${result.percentage.toFixed(1)}%`}
+                          sx={{
+                            backgroundColor: result.percentage >= 70 ? '#DCFCE7' : result.percentage >= 40 ? '#FEF3C7' : '#FEE2E2',
+                            color: result.percentage >= 70 ? '#166534' : result.percentage >= 40 ? '#92400E' : '#991B1B',
+                            fontWeight: 600,
+                          }}
+                        />
+                      </Box>
+
+                      <Divider sx={{ my: 1.5 }} />
+
+                      {/* Details Grid */}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {/* Subjective Score */}
+                        {result.subjectiveResponses?.length > 0 && (
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" color="textSecondary">Subjective</Typography>
+                            <Chip
+                              size="small"
+                              label={`${result.subjectiveResponses.reduce((sum, sr) => sum + sr.aiScore, 0)}/${result.subjectiveResponses.reduce((sum, sr) => sum + sr.maxMarks, 0)}`}
+                              sx={{
+                                backgroundColor: '#E0F2FE',
+                                color: '#003974',
+                                fontWeight: 600,
+                              }}
+                            />
+                          </Box>
+                        )}
+
+                        {/* Coding Submission */}
+                        {result.codingSubmissions?.length > 0 && (
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" color="textSecondary">Coding</Typography>
+                            <CheckCircle color="success" fontSize="small" />
+                          </Box>
+                        )}
+
+                        {/* Total Marks */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="body2" color="textSecondary">Total Marks</Typography>
+                          <Typography variant="body2" fontWeight="600">{result.totalMarks}</Typography>
+                        </Box>
+
+                        {/* Date */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="body2" color="textSecondary">Date</Typography>
+                          <Typography variant="body2">{new Date(result.createdAt).toLocaleDateString()}</Typography>
+                        </Box>
+                      </Box>
+
+                      {/* Action Button */}
+                      {(result.codingSubmissions?.length > 0 || result.subjectiveResponses?.length > 0) && (
+                        <Box sx={{ mt: 2 }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Code />}
+                            onClick={() => handleViewCode(result)}
+                            fullWidth
+                            sx={{
+                              borderColor: '#003974',
+                              color: '#003974',
+                              fontWeight: 600,
+                              '&:hover': {
+                                backgroundColor: '#003974',
+                                color: '#FFFFFF',
+                              },
+                            }}
+                          >
+                            View Submissions
+                          </Button>
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            </DashboardCard>
+          </Grid>
         </Grid>
+        </Box>
 
         {/* Code View Dialog */}
         <Dialog
@@ -776,26 +882,47 @@ const ResultPage = () => {
           onClose={() => setCodeDialogOpen(false)}
           maxWidth="md"
           fullWidth
+          fullScreen={window.innerWidth < 600}
+          PaperProps={{
+            sx: {
+              m: { xs: 0, sm: 2 },
+              maxHeight: { xs: '100%', sm: 'calc(100% - 64px)' },
+            }
+          }}
         >
-          <DialogTitle>My Submissions</DialogTitle>
-          <DialogContent>
+          <DialogTitle sx={{ pb: 1 }}>
+            My Submissions
+            <IconButton
+              aria-label="close"
+              onClick={() => setCodeDialogOpen(false)}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <Code />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ px: { xs: 2, sm: 3 } }}>
             {selectedResult?.subjectiveResponses?.length > 0 && (
               <>
-                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, mt: 2 }} gutterBottom>
                   AI-Graded Subjective Answers
                 </Typography>
                 {selectedResult.subjectiveResponses.map((response, index) => (
                   <Box key={index} mb={3} p={2} sx={{ bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }} gutterBottom>
                       Question {index + 1}: {response.question}
                     </Typography>
                     <Typography variant="body2" color="textSecondary" gutterBottom>
                       Your Answer:
                     </Typography>
-                    <Typography variant="body2" mb={2}>
+                    <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, mb: 2, wordBreak: 'break-word' }}>
                       {response.studentAnswer}
                     </Typography>
-                    <Box display="flex" gap={1} alignItems="center">
+                    <Box display="flex" gap={1} alignItems="flex-start" flexDirection={{ xs: 'column', sm: 'row' }}>
                       <Chip
                         label={`Score: ${response.aiScore}/${response.maxMarks}`}
                         sx={{
@@ -804,7 +931,7 @@ const ResultPage = () => {
                           fontWeight: 600,
                         }}
                       />
-                      <Typography variant="body2" color="textSecondary">
+                      <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                         Feedback: {response.aiFeedback}
                       </Typography>
                     </Box>
@@ -814,19 +941,29 @@ const ResultPage = () => {
             )}
             {selectedResult?.codingSubmissions?.map((submission, index) => (
               <Box key={index} mb={3}>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} gutterBottom>
                   Coding Question {index + 1}
                 </Typography>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
                   Language: {submission.language}
                 </Typography>
-                <SyntaxHighlighter language={submission.language} style={docco}>
-                  {submission.code}
-                </SyntaxHighlighter>
-                <Box mt={1}>
+                <Box sx={{ 
+                  maxWidth: '100%', 
+                  overflow: 'auto',
+                  '& pre': {
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    margin: 0,
+                  }
+                }}>
+                  <SyntaxHighlighter language={submission.language} style={docco}>
+                    {submission.code}
+                  </SyntaxHighlighter>
+                </Box>
+                <Box mt={1} sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   <Chip 
                     icon={<CheckCircle />} 
                     label="Success" 
+                    size={window.innerWidth < 600 ? 'small' : 'medium'}
                     sx={{
                       backgroundColor: '#DCFCE7',
                       color: '#166534',
@@ -839,8 +976,8 @@ const ResultPage = () => {
                   {submission.executionTime && (
                     <Chip 
                       label={`Execution Time: ${submission.executionTime}ms`} 
+                      size={window.innerWidth < 600 ? 'small' : 'medium'}
                       sx={{ 
-                        ml: 1,
                         backgroundColor: '#E0F2FE',
                         color: '#003974',
                         fontWeight: 600,
@@ -851,8 +988,8 @@ const ResultPage = () => {
               </Box>
             ))}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCodeDialogOpen(false)}>Close</Button>
+          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
+            <Button onClick={() => setCodeDialogOpen(false)} fullWidth={window.innerWidth < 600}>Close</Button>
           </DialogActions>
         </Dialog>
       </PageContainer>
@@ -864,23 +1001,23 @@ const ResultPage = () => {
     <PageContainer title="Results Dashboard" description="View and manage exam results">
       <Grid container spacing={3}>
         {/* Summary Cards */}
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ borderLeft: '4px solid #003974' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
-                Total Students
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 } }} gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
+                Students
               </Typography>
-              <Typography variant="h3" sx={{ color: '#003974', fontWeight: 700 }}>{filteredResults.length}</Typography>
+              <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, color: '#003974', fontWeight: 700 }}>{filteredResults.length}</Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ borderLeft: '4px solid #003974' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
-                Average Score
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 } }} gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
+                Avg Score
               </Typography>
-              <Typography variant="h3" sx={{ color: '#003974', fontWeight: 700 }}>
+              <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, color: '#003974', fontWeight: 700 }}>
                 {filteredResults.length > 0
                   ? `${(
                       filteredResults.reduce((acc, curr) => acc + curr.percentage, 0) /
@@ -891,13 +1028,13 @@ const ResultPage = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ borderLeft: '4px solid #003974' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 } }} gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
                 Pass Rate
               </Typography>
-              <Typography variant="h3" sx={{ color: '#003974', fontWeight: 700 }}>
+              <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, color: '#003974', fontWeight: 700 }}>
                 {filteredResults.length > 0
                   ? `${((filteredResults.filter((r) => r.percentage >= 40).length / filteredResults.length) * 100).toFixed(1)}%`
                   : '0%'}
@@ -905,13 +1042,13 @@ const ResultPage = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ borderLeft: '4px solid #003974' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
-                Total Results
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 } }} gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
+                Results
               </Typography>
-              <Typography variant="h3" sx={{ color: '#003974', fontWeight: 700 }}>
+              <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, color: '#003974', fontWeight: 700 }}>
                 {filteredResults.length}
               </Typography>
             </CardContent>
@@ -929,6 +1066,8 @@ const ResultPage = () => {
               borderColor: '#003974',
               color: '#003974',
               fontWeight: 600,
+              py: { xs: 1, md: 1.5 },
+              fontSize: { xs: '0.875rem', md: '1rem' },
               '&:hover': {
                 backgroundColor: '#003974',
                 color: '#FFFFFF',
@@ -954,20 +1093,20 @@ const ResultPage = () => {
                 {/* Detailed Score Analysis */}
                 <Grid item xs={12} md={8}>
                   <DashboardCard title="Student Performance Comparison">
-                    <ResponsiveContainer width="100%" height={350}>
-                      <BarChart data={getDetailedScoreAnalysis()}>
+                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 350 }}>
+                      <BarChart data={getDetailedScoreAnalysis()} margin={{ top: 20, right: { xs: 10, md: 20 }, left: { xs: 10, md: 20 }, bottom: { xs: 20, md: 5 } }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="exam" 
                           angle={0} 
                           textAnchor="middle" 
-                          height={60}
+                          height={{ xs: 50, md: 60 }}
                           interval={0}
-                          tick={{ fontSize: 11 }}
+                          tick={{ fontSize: { xs: 9, md: 11 } }}
                         />
-                        <YAxis domain={[0, 100]} label={{ value: 'Score %', angle: -90, position: 'insideLeft' }} />
+                        <YAxis domain={[0, 100]} label={{ value: 'Score %', angle: -90, position: 'insideLeft', style: { fontSize: { xs: 10, md: 12 } } }} tick={{ fontSize: { xs: 10, md: 12 } }} />
                         <Tooltip />
-                        <Legend />
+                        <Legend wrapperStyle={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }} />
                         <Bar dataKey="score" fill="#003974" name="Score %" radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -977,7 +1116,7 @@ const ResultPage = () => {
                 {/* Grade Distribution */}
                 <Grid item xs={12} md={4}>
                   <DashboardCard title="Grade Distribution">
-                    <ResponsiveContainer width="100%" height={350}>
+                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 350 }}>
                       <PieChart>
                         <Pie
                           data={getGradeDistribution()}
@@ -985,7 +1124,7 @@ const ResultPage = () => {
                           cy="50%"
                           labelLine={true}
                           label={({ name, count }) => `${name.split(' ')[0]}: ${count}`}
-                          outerRadius={100}
+                          outerRadius={{ xs: 80, md: 100 }}
                           fill="#8884d8"
                           dataKey="count"
                         >
@@ -1002,11 +1141,11 @@ const ResultPage = () => {
                 {/* Performance Metrics Radar */}
                 <Grid item xs={12} md={6}>
                   <DashboardCard title="Performance Metrics">
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 300 }}>
                       <RadarChart data={getPerformanceMetrics()}>
                         <PolarGrid />
-                        <PolarAngleAxis dataKey="metric" />
-                        <PolarRadiusAxis domain={[0, 100]} />
+                        <PolarAngleAxis dataKey="metric" tick={{ fontSize: { xs: 10, md: 12 } }} />
+                        <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: { xs: 10, md: 12 } }} />
                         <Radar name="Performance" dataKey="value" stroke="#003974" fill="#003974" fillOpacity={0.6} />
                         <Tooltip />
                       </RadarChart>
@@ -1017,20 +1156,20 @@ const ResultPage = () => {
                 {/* Exam-wise Performance */}
                 <Grid item xs={12} md={6}>
                   <DashboardCard title="Exam-wise Average Performance">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={getExamWisePerformance()}>
+                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 300 }}>
+                      <BarChart data={getExamWisePerformance()} margin={{ top: 20, right: { xs: 10, md: 20 }, left: { xs: 10, md: 20 }, bottom: { xs: 20, md: 5 } }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="name" 
                           angle={0} 
                           textAnchor="middle" 
-                          height={60}
+                          height={{ xs: 50, md: 60 }}
                           interval={0}
-                          tick={{ fontSize: 11 }}
+                          tick={{ fontSize: { xs: 9, md: 11 } }}
                         />
-                        <YAxis domain={[0, 100]} label={{ value: 'Avg Score %', angle: -90, position: 'insideLeft' }} />
+                        <YAxis domain={[0, 100]} label={{ value: 'Avg Score %', angle: -90, position: 'insideLeft', style: { fontSize: { xs: 10, md: 12 } } }} tick={{ fontSize: { xs: 10, md: 12 } }} />
                         <Tooltip />
-                        <Legend />
+                        <Legend wrapperStyle={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }} />
                         <Bar dataKey="avgScore" fill="#003974" name="Average Score %" radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -1044,10 +1183,10 @@ const ResultPage = () => {
                       <Table size="small">
                         <TableHead>
                           <TableRow>
-                            <TableCell>Rank</TableCell>
-                            <TableCell>Name</TableCell>
-                            <TableCell>Exam</TableCell>
-                            <TableCell>Score</TableCell>
+                            <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Rank</TableCell>
+                            <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Name</TableCell>
+                            <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Exam</TableCell>
+                            <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Score</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -1064,8 +1203,8 @@ const ResultPage = () => {
                                   size="small"
                                 />
                               </TableCell>
-                              <TableCell><strong>{performer.name}</strong></TableCell>
-                              <TableCell>{performer.exam}</TableCell>
+                              <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}><strong>{performer.name}</strong></TableCell>
+                              <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>{performer.exam}</TableCell>
                               <TableCell>
                                 <Chip 
                                   label={`${performer.score}%`} 
@@ -1088,7 +1227,7 @@ const ResultPage = () => {
                 {/* Pass/Fail Distribution */}
                 <Grid item xs={12} md={6}>
                   <DashboardCard title="Pass/Fail Distribution">
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 300 }}>
                       <PieChart>
                         <Pie
                           data={[
@@ -1099,7 +1238,7 @@ const ResultPage = () => {
                           cy="50%"
                           labelLine={false}
                           label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                          outerRadius={100}
+                          outerRadius={{ xs: 80, md: 100 }}
                           fill="#8884d8"
                           dataKey="value"
                         >
@@ -1117,8 +1256,8 @@ const ResultPage = () => {
           </>
         )}
 
-        {/* Results Table */}
-        <Grid item xs={12}>
+        {/* Results Table - Desktop View */}
+        <Grid item xs={12} sx={{ display: { xs: 'none', md: 'block' } }}>
           <DashboardCard title="Exam Results">
             {/* Exam Filter and Search */}
             <Box mb={3} display="flex" gap={2} alignItems="center" flexWrap="wrap">
@@ -1282,6 +1421,176 @@ const ResultPage = () => {
             </TableContainer>
           </DashboardCard>
         </Grid>
+
+        {/* Results Cards - Mobile View */}
+        <Grid item xs={12} sx={{ display: { xs: 'block', md: 'none' } }}>
+          <DashboardCard title="Exam Results">
+            {/* Mobile Filters */}
+            <Box mb={2} display="flex" flexDirection="column" gap={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Select Exam</InputLabel>
+                <Select
+                  value={selectedExam}
+                  onChange={(e) => handleExamChange(e.target.value)}
+                  label="Select Exam"
+                >
+                  <MenuItem value="all">All Exams</MenuItem>
+                  {exams.map((exam) => (
+                    <MenuItem key={exam.examId} value={exam.examId}>
+                      {exam.examName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Search Students"
+                variant="outlined"
+                size="small"
+                fullWidth
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Download />}
+                  onClick={downloadCSV}
+                  disabled={filteredResults.length === 0}
+                  sx={{
+                    borderColor: '#003974',
+                    color: '#003974',
+                    fontWeight: 600,
+                    flex: 1,
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  CSV
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PictureAsPdf />}
+                  onClick={downloadPDF}
+                  disabled={filteredResults.length === 0}
+                  sx={{
+                    borderColor: '#ED1C24',
+                    color: '#ED1C24',
+                    fontWeight: 600,
+                    flex: 1,
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  PDF
+                </Button>
+              </Box>
+            </Box>
+
+            <Tabs
+              value={selectedTab}
+              onChange={(e, newValue) => setSelectedTab(newValue)}
+              sx={{ 
+                mb: 2,
+                '& .MuiTab-root': {
+                  color: '#6B7280',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  fontSize: '0.875rem',
+                  minWidth: 'auto',
+                  px: 2,
+                },
+                '& .Mui-selected': {
+                  color: '#003974',
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: '#ED1C24',
+                  height: '3px',
+                },
+              }}
+            >
+              <Tab label="All Results" />
+              <Tab label="MCQ Results" />
+            </Tabs>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {filteredResults.map((result) => (
+                <Card key={result._id} sx={{ border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                  <CardContent sx={{ p: 2 }}>
+                    {/* Student Name */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
+                          {result.userId?.name}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.75rem', mt: 0.5 }}>
+                          {result.userId?.email}
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleToggleVisibility(result._id)}
+                        sx={{
+                          color: result.showToStudent ? '#003974' : '#6B7280',
+                        }}
+                      >
+                        {result.showToStudent ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                      </IconButton>
+                    </Box>
+
+                    {/* Exam Name */}
+                    <Typography variant="body2" sx={{ mb: 1.5, color: '#003974', fontWeight: 600 }}>
+                      {exams.find((e) => e._id === result.examId || e.examId === result.examId)?.examName || result.examId}
+                    </Typography>
+
+                    <Divider sx={{ my: 1.5 }} />
+
+                    {/* Details Grid */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {/* Score */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="textSecondary">Score</Typography>
+                        <Chip
+                          size="small"
+                          label={`${result.percentage.toFixed(1)}%`}
+                          sx={{
+                            backgroundColor: result.percentage >= 70 ? '#DCFCE7' : '#FEF3C7',
+                            color: result.percentage >= 70 ? '#166534' : '#92400E',
+                            fontWeight: 600,
+                          }}
+                        />
+                      </Box>
+
+                      {/* Coding Submission */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="textSecondary">Coding</Typography>
+                        <CheckCircle sx={{ color: '#003974' }} fontSize="small" />
+                      </Box>
+
+                      {/* Total Marks */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="textSecondary">Total Marks</Typography>
+                        <Typography variant="body2" fontWeight="600">{result.totalMarks}</Typography>
+                      </Box>
+
+                      {/* Date */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="textSecondary">Date</Typography>
+                        <Typography variant="body2">{new Date(result.createdAt).toLocaleDateString()}</Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          </DashboardCard>
+        </Grid>
       </Grid>
 
       {/* Code View Dialog */}
@@ -1290,24 +1599,55 @@ const ResultPage = () => {
         onClose={() => setCodeDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        fullScreen={window.innerWidth < 600}
+        PaperProps={{
+          sx: {
+            m: { xs: 0, sm: 2 },
+            maxHeight: { xs: '100%', sm: 'calc(100% - 64px)' },
+          }
+        }}
       >
-        <DialogTitle>Student Code Submissions</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ pb: 1 }}>
+          Student Code Submissions
+          <IconButton
+            aria-label="close"
+            onClick={() => setCodeDialogOpen(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <Code />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 } }}>
           {selectedResult?.codingSubmissions?.map((submission, index) => (
             <Box key={index} mb={3}>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} gutterBottom>
                 Question {index + 1}
               </Typography>
               <Typography variant="body2" color="textSecondary" gutterBottom>
                 Language: {submission.language}
               </Typography>
-              <SyntaxHighlighter language={submission.language} style={docco}>
-                {submission.code}
-              </SyntaxHighlighter>
-              <Box mt={1}>
+              <Box sx={{ 
+                maxWidth: '100%', 
+                overflow: 'auto',
+                '& pre': {
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  margin: 0,
+                }
+              }}>
+                <SyntaxHighlighter language={submission.language} style={docco}>
+                  {submission.code}
+                </SyntaxHighlighter>
+              </Box>
+              <Box mt={1} sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Chip 
                   icon={<CheckCircle />} 
                   label="Success" 
+                  size={window.innerWidth < 600 ? 'small' : 'medium'}
                   sx={{
                     backgroundColor: '#DCFCE7',
                     color: '#166534',
@@ -1320,8 +1660,8 @@ const ResultPage = () => {
                 {submission.executionTime && (
                   <Chip 
                     label={`Execution Time: ${submission.executionTime}ms`} 
+                    size={window.innerWidth < 600 ? 'small' : 'medium'}
                     sx={{ 
-                      ml: 1,
                       backgroundColor: '#E0F2FE',
                       color: '#003974',
                       fontWeight: 600,
@@ -1332,8 +1672,8 @@ const ResultPage = () => {
             </Box>
           ))}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCodeDialogOpen(false)}>Close</Button>
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
+          <Button onClick={() => setCodeDialogOpen(false)} fullWidth={window.innerWidth < 600}>Close</Button>
         </DialogActions>
       </Dialog>
     </PageContainer>
