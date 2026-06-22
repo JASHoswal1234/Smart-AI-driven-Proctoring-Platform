@@ -57,6 +57,8 @@ const FullLayout = () => {
         <Container
           sx={{
             paddingTop: '20px',
+            paddingLeft: { xs: '8px', sm: '16px', md: '24px' },
+            paddingRight: { xs: '8px', sm: '16px', md: '24px' },
             maxWidth: '1800px',
           }}
         >

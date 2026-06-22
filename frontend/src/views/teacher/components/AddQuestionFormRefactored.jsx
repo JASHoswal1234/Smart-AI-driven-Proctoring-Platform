@@ -669,16 +669,16 @@ const AddQuestionFormRefactored = () => {
   };
 
   return (
-    <Box sx={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ height: { xs: 'auto', md: 'calc(100vh - 200px)' }, display: 'flex', flexDirection: 'column', gap: 2, pb: { xs: 4, md: 0 }, maxWidth: '100vw', overflowX: 'hidden' }}>
       {/* Header */}
-      <Paper elevation={0} sx={{ p: 2, borderRadius: '12px', bgcolor: '#FFFFFF', border: '1px solid #ECECEC' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+      <Paper elevation={0} sx={{ p: { xs: 1.5, md: 2 }, borderRadius: '12px', bgcolor: '#FFFFFF', border: '1px solid #ECECEC' }}>
+        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', md: 'center' }} spacing={2}>
           <Box>
-            <Typography variant="h4" sx={{ mb: 0.5, color: '#003974', fontWeight: 600 }}>
+            <Typography variant="h4" sx={{ mb: 0.5, fontSize: { xs: '1.25rem', md: '2.125rem' }, color: '#003974', fontWeight: 600 }}>
               Question Builder {hasUnsavedChanges && <Chip label="Draft" size="small" sx={{ ml: 1, backgroundColor: '#FFF3CD', color: '#856404', fontWeight: 600 }} />}
             </Typography>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <FormControl size="small" sx={{ minWidth: 300 }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
+              <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 300 } }}>
                 <Select
                   value={selectedExamId}
                   onChange={(e) => {
@@ -735,45 +735,52 @@ const AddQuestionFormRefactored = () => {
                   ))}
                 </Select>
               </FormControl>
-              <Chip
-                label={`${questions.length} Questions`}
-                variant="outlined"
-                sx={{
-                  borderColor: '#003974',
-                  color: '#003974',
-                  fontWeight: 600,
-                }}
-              />
-              {selectedExam?.hasCodingRound && (
+              <Stack direction="row" spacing={1} flexWrap="wrap">
                 <Chip
-                  label={`${codingQuestions.length} Coding`}
+                  label={`${questions.length} Questions`}
                   variant="outlined"
+                  size="small"
                   sx={{
-                    borderColor: '#ED1C24',
-                    color: '#ED1C24',
+                    borderColor: '#003974',
+                    color: '#003974',
                     fontWeight: 600,
                   }}
                 />
-              )}
-              {selectedExam?.totalQuestions && (
-                <Chip
-                  label={`${questions.length + codingQuestions.length}/${selectedExam.totalQuestions} Total`}
-                  variant="filled"
-                  sx={{
-                    backgroundColor: (questions.length + codingQuestions.length) >= selectedExam.totalQuestions ? '#4CAF50' : '#FFF3CD',
-                    color: (questions.length + codingQuestions.length) >= selectedExam.totalQuestions ? '#FFFFFF' : '#856404',
-                    fontWeight: 600,
-                  }}
-                />
-              )}
+                {selectedExam?.hasCodingRound && (
+                  <Chip
+                    label={`${codingQuestions.length} Coding`}
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      borderColor: '#ED1C24',
+                      color: '#ED1C24',
+                      fontWeight: 600,
+                    }}
+                  />
+                )}
+                {selectedExam?.totalQuestions && (
+                  <Chip
+                    label={`${questions.length + codingQuestions.length}/${selectedExam.totalQuestions} Total`}
+                    variant="filled"
+                    size="small"
+                    sx={{
+                      backgroundColor: (questions.length + codingQuestions.length) >= selectedExam.totalQuestions ? '#4CAF50' : '#FFF3CD',
+                      color: (questions.length + codingQuestions.length) >= selectedExam.totalQuestions ? '#FFFFFF' : '#856404',
+                      fontWeight: 600,
+                    }}
+                  />
+                )}
+              </Stack>
             </Stack>
           </Box>
-          <Stack direction="row" spacing={2}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
             {hasUnsavedChanges && (
               <Button
                 variant="outlined"
                 onClick={handleDiscardDraft}
                 disabled={isPublishing}
+                fullWidth
+                size="small"
                 sx={{ 
                   borderRadius: '8px',
                   borderColor: '#ED1C24',
@@ -789,9 +796,10 @@ const AddQuestionFormRefactored = () => {
             )}
             <Button
               variant="contained"
-              size="large"
+              size="small"
               onClick={handleSaveExam}
               disabled={(questions.length === 0 && codingQuestions.length === 0) || isPublishing}
+              fullWidth
               sx={{ 
                 borderRadius: '8px',
                 backgroundColor: '#003974',
@@ -891,11 +899,11 @@ const AddQuestionFormRefactored = () => {
 
           {selectedCodingQuestionId !== null || (selectedCodingQuestionId === null && selectedQuestionId === null && codingQuestions.length === 0 && questions.length === 0) ? (
             /* Coding Questions Tab Content */
-            <Box sx={{ display: 'flex', gap: 2, flex: 1, overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, flex: 1, overflow: 'hidden' }}>
               {/* Coding Question List */}
-              <Paper elevation={0} sx={{ width: '25%', p: 2, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper' }}>
+              <Paper elevation={0} sx={{ width: { xs: '100%', md: '25%' }, p: 2, borderRadius: '12px', overflow: 'auto', maxHeight: { xs: '300px', md: 'none' }, bgcolor: 'background.paper' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography variant="h6" sx={{ fontSize: { xs: '1rem', md: '1.25rem' }, fontWeight: 600 }}>
                     Coding Questions
                   </Typography>
                   <Button
@@ -965,8 +973,8 @@ const AddQuestionFormRefactored = () => {
               </Paper>
 
               {/* Coding Question Editor */}
-              <Paper elevation={0} sx={{ width: '75%', p: 3, pb: 4, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper' }}>
-                <Typography variant="h5" sx={{ mb: 3, color: '#ED1C24', fontWeight: 600 }}>
+              <Paper elevation={0} sx={{ width: { xs: '100%', md: '75%' }, p: { xs: 2, md: 3 }, pb: { xs: 3, md: 4 }, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper' }}>
+                <Typography variant="h5" sx={{ mb: 3, fontSize: { xs: '1.25rem', md: '1.5rem' }, color: '#ED1C24', fontWeight: 600 }}>
                   {currentCodingQuestion.id ? 'Edit Coding Question' : 'Create New Coding Question'}
                 </Typography>
 
@@ -1092,10 +1100,10 @@ const AddQuestionFormRefactored = () => {
             </Box>
           ) : (
             /* MCQ/Subjective Questions Tab */
-            <Box sx={{ display: 'flex', gap: 2, flex: 1, overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, flex: 1, overflow: { xs: 'auto', md: 'hidden' } }}>
               {/* Column 1: Question List */}
-              <Paper elevation={0} sx={{ width: '20%', p: 2, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper' }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              <Paper elevation={0} sx={{ width: { xs: '100%', md: '20%' }, p: 2, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper', maxHeight: { xs: '300px', md: 'none' } }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, fontSize: { xs: '1rem', md: '1.25rem' } }}>
                   Questions
                 </Typography>
 
@@ -1151,13 +1159,13 @@ const AddQuestionFormRefactored = () => {
               </Paper>
 
               {/* Column 2: Question Editor */}
-              <Paper elevation={0} sx={{ width: '50%', p: 3, pb: 4, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper', boxShadow: 'inset 0 -8px 10px -6px rgba(0, 0, 0, 0.15)' }}>
-                <Typography variant="h5" sx={{ mb: 3, color: '#003974', fontWeight: 600 }}>
+              <Paper elevation={0} sx={{ width: { xs: '100%', md: '50%' }, p: { xs: 2, md: 3 }, pb: { xs: 3, md: 4 }, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper', boxShadow: 'inset 0 -8px 10px -6px rgba(0, 0, 0, 0.15)' }}>
+                <Typography variant="h5" sx={{ mb: { xs: 2, md: 3 }, color: '#003974', fontWeight: 600, fontSize: { xs: '1.125rem', md: '1.5rem' } }}>
                   {currentQuestion.id ? 'Edit Question' : 'Create New Question'}
                 </Typography>
 
                 <Stack spacing={3}>
-                  <Stack direction="row" spacing={2}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                     <FormControl fullWidth>
                       <InputLabel>Question Type</InputLabel>
                       <Select
@@ -1177,11 +1185,11 @@ const AddQuestionFormRefactored = () => {
                       onChange={(e) => setCurrentQuestion({ ...currentQuestion, ansmarks: Number(e.target.value) })}
                       error={!!validationErrors.ansmarks}
                       helperText={validationErrors.ansmarks}
-                      sx={{ width: '150px' }}
+                      sx={{ width: { xs: '100%', md: '150px' } }}
                       inputProps={{ min: 1 }}
                     />
 
-                    <FormControl sx={{ width: '150px' }}>
+                    <FormControl sx={{ width: { xs: '100%', md: '150px' } }}>
                       <InputLabel>Difficulty</InputLabel>
                       <Select
                         value={currentQuestion.difficulty}
@@ -1351,14 +1359,16 @@ const AddQuestionFormRefactored = () => {
                     />
                   )}
 
-                  <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="flex-end" sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
                     <Button 
                       variant="outlined" 
-                      onClick={handleNewQuestion} 
+                      onClick={handleNewQuestion}
                       sx={{ 
                         borderRadius: '8px',
                         borderColor: '#6B7280',
                         color: '#6B7280',
+                        minHeight: { xs: '44px', md: 'auto' },
+                        width: { xs: '100%', md: 'auto' },
                         '&:hover': {
                           borderColor: '#4B5563',
                           backgroundColor: '#F8F9FB',
@@ -1376,6 +1386,8 @@ const AddQuestionFormRefactored = () => {
                         backgroundColor: '#003974',
                         color: '#FFFFFF',
                         fontWeight: 600,
+                        minHeight: { xs: '44px', md: 'auto' },
+                        width: { xs: '100%', md: 'auto' },
                         '&:hover': {
                           backgroundColor: '#002a54',
                         }
@@ -1388,8 +1400,8 @@ const AddQuestionFormRefactored = () => {
               </Paper>
 
               {/* Column 3: Live Preview */}
-              <Paper elevation={0} sx={{ width: '30%', p: 3, borderRadius: '12px', overflow: 'auto', bgcolor: 'grey.100' }}>
-                <Typography variant="h6" sx={{ mb: 2, color: '#003974', fontWeight: 600 }}>
+              <Paper elevation={0} sx={{ width: { xs: '100%', md: '30%' }, p: { xs: 2, md: 3 }, borderRadius: '12px', overflow: 'auto', bgcolor: 'grey.100' }}>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: { xs: '1rem', md: '1.25rem' }, color: '#003974', fontWeight: 600 }}>
                   Student View Preview
                 </Typography>
 
@@ -1475,10 +1487,10 @@ const AddQuestionFormRefactored = () => {
         </Box>
       ) : (
         /* Standard 3-column layout for exams WITHOUT coding round */
-        <Box sx={{ display: 'flex', gap: 2, flex: 1, overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, flex: 1, overflow: { xs: 'auto', md: 'hidden' } }}>
           {/* Same 3-column layout as above */}
-          <Paper elevation={0} sx={{ width: '20%', p: 2, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper' }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+          <Paper elevation={0} sx={{ width: { xs: '100%', md: '20%' }, p: 2, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper', maxHeight: { xs: '300px', md: 'none' } }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, fontSize: { xs: '1rem', md: '1.25rem' } }}>
               Questions
             </Typography>
 
@@ -1533,8 +1545,8 @@ const AddQuestionFormRefactored = () => {
             )}
           </Paper>
 
-          <Paper elevation={0} sx={{ width: '50%', p: 3, pb: 4, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper', boxShadow: 'inset 0 -8px 10px -6px rgba(0, 0, 0, 0.15)' }}>
-            <Typography variant="h5" sx={{ mb: 3, color: '#003974', fontWeight: 600 }}>
+          <Paper elevation={0} sx={{ width: { xs: '100%', md: '50%' }, p: { xs: 2, md: 3 }, pb: { xs: 3, md: 4 }, borderRadius: '12px', overflow: 'auto', bgcolor: 'background.paper', boxShadow: 'inset 0 -8px 10px -6px rgba(0, 0, 0, 0.15)' }}>
+            <Typography variant="h5" sx={{ mb: 3, fontSize: { xs: '1.25rem', md: '1.5rem' }, color: '#003974', fontWeight: 600 }}>
               {currentQuestion.id ? 'Edit Question' : 'Create New Question'}
             </Typography>
 
@@ -1701,6 +1713,8 @@ const AddQuestionFormRefactored = () => {
                       onClick={handleAddOption}
                       sx={{ 
                         mt: 2,
+                        minHeight: { xs: '44px', md: 'auto' },
+                        width: '100%',
                         borderColor: '#003974',
                         color: '#003974',
                         '&:hover': {
@@ -1733,14 +1747,16 @@ const AddQuestionFormRefactored = () => {
                 />
               )}
 
-              <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="flex-end" sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
                 <Button 
                   variant="outlined" 
-                  onClick={handleNewQuestion} 
+                  onClick={handleNewQuestion}
                   sx={{ 
                     borderRadius: '8px',
                     borderColor: '#6B7280',
                     color: '#6B7280',
+                    minHeight: { xs: '44px', md: 'auto' },
+                    width: { xs: '100%', md: 'auto' },
                     '&:hover': {
                       borderColor: '#4B5563',
                       backgroundColor: '#F8F9FB',
@@ -1758,6 +1774,8 @@ const AddQuestionFormRefactored = () => {
                     backgroundColor: '#003974',
                     color: '#FFFFFF',
                     fontWeight: 600,
+                    minHeight: { xs: '44px', md: 'auto' },
+                    width: { xs: '100%', md: 'auto' },
                     '&:hover': {
                       backgroundColor: '#002a54',
                     }
@@ -1769,8 +1787,8 @@ const AddQuestionFormRefactored = () => {
             </Stack>
           </Paper>
 
-          <Paper elevation={0} sx={{ width: '30%', p: 3, borderRadius: '12px', overflow: 'auto', bgcolor: 'grey.100' }}>
-            <Typography variant="h6" sx={{ mb: 2, color: '#003974', fontWeight: 600 }}>
+          <Paper elevation={0} sx={{ width: { xs: '100%', md: '30%' }, p: { xs: 2, md: 3 }, borderRadius: '12px', overflow: 'auto', bgcolor: 'grey.100' }}>
+            <Typography variant="h6" sx={{ mb: 2, fontSize: { xs: '1rem', md: '1.25rem' }, color: '#003974', fontWeight: 600 }}>
               Student View Preview
             </Typography>
 

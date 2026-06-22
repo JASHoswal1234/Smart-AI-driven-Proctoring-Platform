@@ -158,25 +158,25 @@ const UserProfile = () => {
 
   return (
     <PageContainer title="User Profile" description="View your profile and exam history">
-      <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, md: 3 } }}>
         {/* Profile Card */}
-        <Card elevation={0} sx={{ p: 4, mb: 4, border: '1px solid #ECECEC', borderRadius: '12px' }}>
-          <Stack direction="row" spacing={3} alignItems="flex-start">
+        <Card elevation={0} sx={{ p: { xs: 2, md: 4 }, mb: 4, border: '1px solid #ECECEC', borderRadius: '12px' }}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems={{ xs: 'center', md: 'flex-start' }}>
             <Avatar
               sx={{
-                width: 100,
-                height: 100,
+                width: { xs: 80, md: 100 },
+                height: { xs: 80, md: 100 },
                 bgcolor: '#9CA3AF',
-                fontSize: '2.5rem',
+                fontSize: { xs: '2rem', md: '2.5rem' },
               }}
             >
-              <PersonIcon sx={{ fontSize: '3.5rem', color: '#FFFFFF' }} />
+              <PersonIcon sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' }, color: '#FFFFFF' }} />
             </Avatar>
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ flex: 1, width: { xs: '100%', md: 'auto' } }}>
               {!editMode ? (
                 <>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h3" sx={{ color: '#0F2242', fontWeight: 600 }}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={{ xs: 2, md: 0 }} mb={2}>
+                    <Typography variant="h3" sx={{ color: '#0F2242', fontWeight: 600, fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
                       {userInfo?.name}
                     </Typography>
                     <Button
@@ -187,6 +187,8 @@ const UserProfile = () => {
                         borderColor: '#003974',
                         color: '#003974',
                         borderRadius: '8px',
+                        minHeight: { xs: '44px', md: 'auto' },
+                        width: { xs: '100%', md: 'auto' },
                         '&:hover': {
                           borderColor: '#002a54',
                           backgroundColor: '#F0F7FF',
@@ -314,7 +316,7 @@ const UserProfile = () => {
                       </>
                     )}
                     <Grid item xs={12}>
-                      <Stack direction="row" spacing={2}>
+                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                         <Button
                           variant="contained"
                           startIcon={<IconDeviceFloppy />}
@@ -324,6 +326,8 @@ const UserProfile = () => {
                             color: '#FFFFFF',
                             fontWeight: 600,
                             borderRadius: '8px',
+                            minHeight: { xs: '44px', md: 'auto' },
+                            width: { xs: '100%', md: 'auto' },
                             '&:hover': {
                               backgroundColor: '#002a54',
                             }
@@ -338,6 +342,8 @@ const UserProfile = () => {
                             borderColor: '#6B7280',
                             color: '#6B7280',
                             borderRadius: '8px',
+                            minHeight: { xs: '44px', md: 'auto' },
+                            width: { xs: '100%', md: 'auto' },
                             '&:hover': {
                               borderColor: '#4B5563',
                               backgroundColor: '#F8F9FB',
@@ -356,10 +362,10 @@ const UserProfile = () => {
         </Card>
 
         {/* Password & Security Section */}
-        <Card elevation={0} sx={{ p: 4, mb: 4, border: '1px solid #ECECEC', borderRadius: '12px' }}>
-          <Stack direction="row" spacing={2} alignItems="center" mb={3}>
+        <Card elevation={0} sx={{ p: { xs: 2, md: 4 }, mb: 4, border: '1px solid #ECECEC', borderRadius: '12px' }}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }} mb={3}>
             <IconLock size={28} color="#003974" />
-            <Typography variant="h4" sx={{ color: '#003974', fontWeight: 600 }}>
+            <Typography variant="h4" sx={{ color: '#003974', fontWeight: 600, fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
               Password & Security
             </Typography>
           </Stack>
@@ -384,6 +390,8 @@ const UserProfile = () => {
                     color: '#FFFFFF',
                     fontWeight: 600,
                     borderRadius: '8px',
+                    minHeight: { xs: '44px', md: 'auto' },
+                    width: { xs: '100%', md: 'auto' },
                     '&:hover': {
                       backgroundColor: '#002a54',
                     }
@@ -455,7 +463,7 @@ const UserProfile = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <Stack direction="row" spacing={2}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                     <Button
                       variant="contained"
                       startIcon={<IconDeviceFloppy />}
@@ -465,6 +473,8 @@ const UserProfile = () => {
                         color: '#FFFFFF',
                         fontWeight: 600,
                         borderRadius: '8px',
+                        minHeight: { xs: '44px', md: 'auto' },
+                        width: { xs: '100%', md: 'auto' },
                         '&:hover': {
                           backgroundColor: '#002a54',
                         }
@@ -486,6 +496,8 @@ const UserProfile = () => {
                         borderColor: '#6B7280',
                         color: '#6B7280',
                         borderRadius: '8px',
+                        minHeight: { xs: '44px', md: 'auto' },
+                        width: { xs: '100%', md: 'auto' },
                         '&:hover': {
                           borderColor: '#4B5563',
                           backgroundColor: '#F8F9FB',
@@ -503,10 +515,10 @@ const UserProfile = () => {
 
         {/* Exam Results Section */}
         {userInfo?.role === 'student' && (
-          <Card elevation={0} sx={{ p: 4, border: '1px solid #ECECEC', borderRadius: '12px' }}>
-            <Stack direction="row" spacing={2} alignItems="center" mb={3}>
+          <Card elevation={0} sx={{ p: { xs: 2, md: 4 }, border: '1px solid #ECECEC', borderRadius: '12px' }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }} mb={3}>
               <IconTrophy size={28} color="#003974" />
-              <Typography variant="h4" sx={{ color: '#003974', fontWeight: 600 }}>
+              <Typography variant="h4" sx={{ color: '#003974', fontWeight: 600, fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
                 Exam History
               </Typography>
             </Stack>
@@ -526,80 +538,133 @@ const UserProfile = () => {
                 </Typography>
               </Box>
             ) : (
-              <TableContainer component={Paper} variant="outlined">
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: 'primary.light' }}>
-                      <TableCell>
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Exam Name
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Score
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Percentage
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Grade
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Date
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {results.map((result) => {
-                      const exam = exams[result.examId];
-                      const percentage = result.percentage || 0;
-                      
-                      return (
-                        <TableRow key={result._id} hover>
-                          <TableCell>
-                            <Typography variant="body1" fontWeight={500}>
-                              {exam?.examName || 'Unknown Exam'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Typography variant="body1">
-                              {result.totalMarks?.toFixed(2) || 0}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Chip
-                              label={`${percentage.toFixed(2)}%`}
-                              color={getGradeColor(percentage)}
-                              size="small"
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            <Chip
-                              label={getGrade(percentage)}
-                              color={getGradeColor(percentage)}
-                              variant="outlined"
-                              size="small"
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            <Typography variant="body2" color="textSecondary">
-                              {new Date(result.createdAt).toLocaleDateString()}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <>
+                {/* Desktop Table View */}
+                <TableContainer component={Paper} variant="outlined" sx={{ display: { xs: 'none', md: 'block' } }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: 'primary.light' }}>
+                        <TableCell>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Exam Name
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Score
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Percentage
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Grade
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Date
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {results.map((result) => {
+                        const exam = exams[result.examId];
+                        const percentage = result.percentage || 0;
+                        
+                        return (
+                          <TableRow key={result._id} hover>
+                            <TableCell>
+                              <Typography variant="body1" fontWeight={500}>
+                                {exam?.examName || 'Unknown Exam'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Typography variant="body1">
+                                {result.totalMarks?.toFixed(2) || 0}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Chip
+                                label={`${percentage.toFixed(2)}%`}
+                                color={getGradeColor(percentage)}
+                                size="small"
+                              />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Chip
+                                label={getGrade(percentage)}
+                                color={getGradeColor(percentage)}
+                                variant="outlined"
+                                size="small"
+                              />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Typography variant="body2" color="textSecondary">
+                                {new Date(result.createdAt).toLocaleDateString()}
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                {/* Mobile Card View */}
+                <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+                  {results.map((result) => {
+                    const exam = exams[result.examId];
+                    const percentage = result.percentage || 0;
+                    
+                    return (
+                      <Card key={result._id} sx={{ border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                        <Box sx={{ p: 2 }}>
+                          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1.5 }}>
+                            {exam?.examName || 'Unknown Exam'}
+                          </Typography>
+                          <Divider sx={{ mb: 1.5 }} />
+                          <Stack spacing={1}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" color="textSecondary">Score</Typography>
+                              <Typography variant="body2" fontWeight="600">
+                                {result.totalMarks?.toFixed(2) || 0}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" color="textSecondary">Percentage</Typography>
+                              <Chip
+                                label={`${percentage.toFixed(2)}%`}
+                                color={getGradeColor(percentage)}
+                                size="small"
+                              />
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" color="textSecondary">Grade</Typography>
+                              <Chip
+                                label={getGrade(percentage)}
+                                color={getGradeColor(percentage)}
+                                variant="outlined"
+                                size="small"
+                              />
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" color="textSecondary">Date</Typography>
+                              <Typography variant="body2">
+                                {new Date(result.createdAt).toLocaleDateString()}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Box>
+                      </Card>
+                    );
+                  })}
+                </Box>
+              </>
             )}
           </Card>
         )}

@@ -1093,21 +1093,21 @@ const ResultPage = () => {
                 {/* Detailed Score Analysis */}
                 <Grid item xs={12} md={8}>
                   <DashboardCard title="Student Performance Comparison">
-                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 350 }}>
-                      <BarChart data={getDetailedScoreAnalysis()} margin={{ top: 20, right: { xs: 10, md: 20 }, left: { xs: 10, md: 20 }, bottom: { xs: 20, md: 5 } }}>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart data={getDetailedScoreAnalysis()} margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="exam" 
                           angle={0} 
                           textAnchor="middle" 
-                          height={{ xs: 50, md: 60 }}
+                          height={60}
                           interval={0}
-                          tick={{ fontSize: { xs: 9, md: 11 } }}
+                          tick={{ fontSize: 11 }}
                         />
-                        <YAxis domain={[0, 100]} label={{ value: 'Score %', angle: -90, position: 'insideLeft', style: { fontSize: { xs: 10, md: 12 } } }} tick={{ fontSize: { xs: 10, md: 12 } }} />
+                        <YAxis domain={[0, 100]} label={{ value: 'Score %', angle: -90, position: 'insideLeft' }} />
                         <Tooltip />
-                        <Legend wrapperStyle={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }} />
-                        <Bar dataKey="score" fill="#003974" name="Score %" radius={[8, 8, 0, 0]} />
+                        <Legend />
+                        <Bar dataKey="score" fill="#003974" name="Score %" radius={[8, 8, 0, 0]} maxBarSize={80} />
                       </BarChart>
                     </ResponsiveContainer>
                   </DashboardCard>
@@ -1116,7 +1116,7 @@ const ResultPage = () => {
                 {/* Grade Distribution */}
                 <Grid item xs={12} md={4}>
                   <DashboardCard title="Grade Distribution">
-                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 350 }}>
+                    <ResponsiveContainer width="100%" height={350}>
                       <PieChart>
                         <Pie
                           data={getGradeDistribution()}
@@ -1124,7 +1124,7 @@ const ResultPage = () => {
                           cy="50%"
                           labelLine={true}
                           label={({ name, count }) => `${name.split(' ')[0]}: ${count}`}
-                          outerRadius={{ xs: 80, md: 100 }}
+                          outerRadius={100}
                           fill="#8884d8"
                           dataKey="count"
                         >
@@ -1141,11 +1141,11 @@ const ResultPage = () => {
                 {/* Performance Metrics Radar */}
                 <Grid item xs={12} md={6}>
                   <DashboardCard title="Performance Metrics">
-                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 300 }}>
+                    <ResponsiveContainer width="100%" height={300}>
                       <RadarChart data={getPerformanceMetrics()}>
                         <PolarGrid />
-                        <PolarAngleAxis dataKey="metric" tick={{ fontSize: { xs: 10, md: 12 } }} />
-                        <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: { xs: 10, md: 12 } }} />
+                        <PolarAngleAxis dataKey="metric" />
+                        <PolarRadiusAxis domain={[0, 100]} />
                         <Radar name="Performance" dataKey="value" stroke="#003974" fill="#003974" fillOpacity={0.6} />
                         <Tooltip />
                       </RadarChart>
@@ -1156,21 +1156,21 @@ const ResultPage = () => {
                 {/* Exam-wise Performance */}
                 <Grid item xs={12} md={6}>
                   <DashboardCard title="Exam-wise Average Performance">
-                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 300 }}>
-                      <BarChart data={getExamWisePerformance()} margin={{ top: 20, right: { xs: 10, md: 20 }, left: { xs: 10, md: 20 }, bottom: { xs: 20, md: 5 } }}>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={getExamWisePerformance()} margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="name" 
                           angle={0} 
                           textAnchor="middle" 
-                          height={{ xs: 50, md: 60 }}
+                          height={60}
                           interval={0}
-                          tick={{ fontSize: { xs: 9, md: 11 } }}
+                          tick={{ fontSize: 11 }}
                         />
-                        <YAxis domain={[0, 100]} label={{ value: 'Avg Score %', angle: -90, position: 'insideLeft', style: { fontSize: { xs: 10, md: 12 } } }} tick={{ fontSize: { xs: 10, md: 12 } }} />
+                        <YAxis domain={[0, 100]} label={{ value: 'Avg Score %', angle: -90, position: 'insideLeft' }} />
                         <Tooltip />
-                        <Legend wrapperStyle={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }} />
-                        <Bar dataKey="avgScore" fill="#003974" name="Average Score %" radius={[8, 8, 0, 0]} />
+                        <Legend />
+                        <Bar dataKey="avgScore" fill="#003974" name="Average Score %" radius={[8, 8, 0, 0]} maxBarSize={80} />
                       </BarChart>
                     </ResponsiveContainer>
                   </DashboardCard>
@@ -1227,7 +1227,7 @@ const ResultPage = () => {
                 {/* Pass/Fail Distribution */}
                 <Grid item xs={12} md={6}>
                   <DashboardCard title="Pass/Fail Distribution">
-                    <ResponsiveContainer width="100%" height={{ xs: 250, md: 300 }}>
+                    <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
                           data={[
@@ -1238,7 +1238,7 @@ const ResultPage = () => {
                           cy="50%"
                           labelLine={false}
                           label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                          outerRadius={{ xs: 80, md: 100 }}
+                          outerRadius={100}
                           fill="#8884d8"
                           dataKey="value"
                         >

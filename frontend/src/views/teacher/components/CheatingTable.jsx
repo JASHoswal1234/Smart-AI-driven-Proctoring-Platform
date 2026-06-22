@@ -23,6 +23,7 @@ import {
   IconButton,
   Tooltip,
   Chip,
+  Divider,
 } from '@mui/material';
 import { useGetExamsQuery } from 'src/slices/examApiSlice';
 import { useGetCheatingLogsQuery } from 'src/slices/cheatingLogApiSlice';
@@ -180,76 +181,146 @@ export default function CheatingTable() {
           </Typography>
         </Box>
       ) : (
-        <TableContainer component={Paper} sx={{ borderRadius: '12px', border: '1px solid #ECECEC' }}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: '#F8F9FB' }}>
-                <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Sno</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Total Violations</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Screenshots</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: '#6B7280' }}>
-                    No cheating logs found for this exam
-                  </TableCell>
+        <>
+          {/* Desktop Table View */}
+          <TableContainer component={Paper} sx={{ borderRadius: '12px', border: '1px solid #ECECEC', display: { xs: 'none', md: 'block' } }}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#F8F9FB' }}>
+                  <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Sno</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Name</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Total Violations</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#0F2242' }}>Screenshots</TableCell>
                 </TableRow>
-              ) : (
-                filteredUsers.map((log, index) => {
+              </TableHead>
+              <TableBody>
+                {filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: '#6B7280' }}>
+                      No cheating logs found for this exam
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((log, index) => {
+                    const violationStyle = getViolationColor(log.totalViolations || 0);
+                    return (
+                      <TableRow 
+                        key={index}
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: '#F8F9FB',
+                          }
+                        }}
+                      >
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell sx={{ fontWeight: 500 }}>{log.username}</TableCell>
+                        <TableCell sx={{ color: '#6B7280' }}>{log.email}</TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={getViolationIcon(log.totalViolations || 0)}
+                            label={log.totalViolations || 0}
+                            size="small"
+                            sx={{
+                              backgroundColor: violationStyle.bg,
+                              color: violationStyle.color,
+                              borderColor: violationStyle.border,
+                              border: '1px solid',
+                              fontWeight: 600,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title="View Screenshots">
+                            <IconButton
+                              onClick={() => handleViewScreenshots(log)}
+                              disabled={!log.screenshots?.length}
+                              sx={{
+                                color: log.screenshots?.length ? '#003974' : '#ECECEC',
+                                '&:hover': {
+                                  backgroundColor: '#F0F7FF',
+                                }
+                              }}
+                            >
+                              <ImageIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Mobile Card View */}
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            {filteredUsers.length === 0 ? (
+              <Paper sx={{ p: 3, textAlign: 'center', borderRadius: '12px', border: '1px solid #ECECEC' }}>
+                <Typography color="textSecondary">No cheating logs found for this exam</Typography>
+              </Paper>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {filteredUsers.map((log, index) => {
                   const violationStyle = getViolationColor(log.totalViolations || 0);
                   return (
-                    <TableRow 
-                      key={index}
-                      sx={{
-                        '&:hover': {
-                          backgroundColor: '#F8F9FB',
-                        }
-                      }}
-                    >
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell sx={{ fontWeight: 500 }}>{log.username}</TableCell>
-                      <TableCell sx={{ color: '#6B7280' }}>{log.email}</TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={getViolationIcon(log.totalViolations || 0)}
-                          label={log.totalViolations || 0}
-                          size="small"
-                          sx={{
-                            backgroundColor: violationStyle.bg,
-                            color: violationStyle.color,
-                            borderColor: violationStyle.border,
-                            border: '1px solid',
-                            fontWeight: 600,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title="View Screenshots">
+                    <Card key={index} sx={{ border: '1px solid #ECECEC', borderRadius: '12px' }}>
+                      <CardContent sx={{ p: 2 }}>
+                        {/* Header with number and name */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="caption" sx={{ color: '#6B7280', fontSize: '0.7rem' }}>
+                              #{index + 1}
+                            </Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                              {log.username}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '0.8rem' }}>
+                              {log.email}
+                            </Typography>
+                          </Box>
                           <IconButton
                             onClick={() => handleViewScreenshots(log)}
                             disabled={!log.screenshots?.length}
+                            size="small"
                             sx={{
                               color: log.screenshots?.length ? '#003974' : '#ECECEC',
-                              '&:hover': {
-                                backgroundColor: '#F0F7FF',
-                              }
+                              backgroundColor: log.screenshots?.length ? '#F0F7FF' : 'transparent',
                             }}
                           >
-                            <ImageIcon />
+                            <ImageIcon fontSize="small" />
                           </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
+                        </Box>
+
+                        <Divider sx={{ my: 1.5 }} />
+
+                        {/* Violations Badge */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '0.875rem' }}>
+                            Violations
+                          </Typography>
+                          <Chip
+                            icon={getViolationIcon(log.totalViolations || 0)}
+                            label={log.totalViolations || 0}
+                            size="small"
+                            sx={{
+                              backgroundColor: violationStyle.bg,
+                              color: violationStyle.color,
+                              borderColor: violationStyle.border,
+                              border: '1px solid',
+                              fontWeight: 600,
+                            }}
+                          />
+                        </Box>
+                      </CardContent>
+                    </Card>
                   );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                })}
+              </Box>
+            )}
+          </Box>
+        </>
       )}
 
       {/* Screenshots Dialog */}
@@ -258,15 +329,17 @@ export default function CheatingTable() {
         onClose={handleCloseDialog} 
         maxWidth="md" 
         fullWidth
+        fullScreen={window.innerWidth < 600}
         PaperProps={{
           sx: {
-            borderRadius: '12px',
+            borderRadius: { xs: 0, sm: '12px' },
+            m: { xs: 0, sm: 2 },
           }
         }}
       >
-        <DialogTitle sx={{ borderBottom: '1px solid #ECECEC' }}>
+        <DialogTitle sx={{ borderBottom: '1px solid #ECECEC', p: { xs: 2, sm: 3 } }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" sx={{ color: '#003974', fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ color: '#003974', fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               Screenshots - {selectedLog?.username}
             </Typography>
             <IconButton 
@@ -282,36 +355,42 @@ export default function CheatingTable() {
             </IconButton>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Grid container spacing={2}>
-            {selectedLog?.screenshots?.map((screenshot, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card 
-                  elevation={0}
-                  sx={{ 
-                    border: '1px solid #ECECEC',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={screenshot.url}
-                    alt={`Violation - ${screenshot.type}`}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                  <CardContent>
-                    <Typography variant="subtitle2" sx={{ color: '#0F2242', fontWeight: 600 }}>
-                      Type: {screenshot.type}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: '#6B7280' }}>
-                      Detected: {new Date(screenshot.detectedAt).toLocaleString()}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+        <DialogContent sx={{ pt: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 } }}>
+          {selectedLog?.screenshots && selectedLog.screenshots.length > 0 ? (
+            <Grid container spacing={2}>
+              {selectedLog.screenshots.map((screenshot, index) => (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Card 
+                    elevation={0}
+                    sx={{ 
+                      border: '1px solid #ECECEC',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      height="200"
+                      image={screenshot.url}
+                      alt={`Violation - ${screenshot.type}`}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                    <CardContent sx={{ p: 2 }}>
+                      <Typography variant="subtitle2" sx={{ color: '#0F2242', fontWeight: 600, fontSize: '0.875rem' }}>
+                        Type: {screenshot.type}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#6B7280', fontSize: '0.75rem' }}>
+                        Detected: {new Date(screenshot.detectedAt).toLocaleString()}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography color="textSecondary">No screenshots available</Typography>
+            </Box>
+          )}
         </DialogContent>
       </Dialog>
     </Box>
