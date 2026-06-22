@@ -110,13 +110,16 @@ export default function MultipleChoiceQuestion({
     if (onAnsweredChange) onAnsweredChange(answeredIndices);
   }, [answeredIndices, onAnsweredChange]);
 
-  // Keep answersRef in sync
+  // Keep answersRef in sync for intermediate questions
   useEffect(() => {
     if (answersRef) answersRef.current = Object.fromEntries(answers);
   }, [answers, answersRef]);
 
   const handleNextQuestion = () => {
     const q = questions[currentQuestion];
+
+    // Build updated answers eagerly so the last answer is captured before async state update
+    let updatedAnswers = new Map(answers);
 
     if (!q.questionType || q.questionType === 'mcq') {
       if (selectedOption) {
@@ -125,7 +128,8 @@ export default function MultipleChoiceQuestion({
           setScore((s) => s + 1);
           saveUserTestScore();
         }
-        setAnswers((prev) => { const n = new Map(prev); n.set(q._id, selectedOption); return n; });
+        updatedAnswers.set(q._id, selectedOption);
+        setAnswers(updatedAnswers);
       }
     } else if (q.questionType === 'subjective' && subjectiveAnswer.trim()) {
       setSubjectiveAnswers((prev) => ({ ...prev, [q._id]: subjectiveAnswer }));
@@ -133,13 +137,28 @@ export default function MultipleChoiceQuestion({
       setCodingAnswers((prev) => ({ ...prev, [q._id]: { code: codingAnswer, language: codingLanguage } }));
     }
 
-    setAnsweredIndices((prev) => prev.includes(currentQuestion) ? prev : [...prev, currentQuestion]);
+    // Flush the latest answers into the ref immediately (don't wait for re-render)
+    if (answersRef) {
+      answersRef.current = Object.fromEntries(updatedAnswers);
+    }
+
+    const newAnsweredIndices = answeredIndices.includes(currentQuestion)
+      ? answeredIndices
+      : [...answeredIndices, currentQuestion];
+    setAnsweredIndices(newAnsweredIndices);
+    if (onAnsweredChange) onAnsweredChange(newAnsweredIndices);
+
+    // Last question — save answer then submit
+    if (isLastQuestion) {
+      submitTest(true); // true = skipConfirm, user already chose to save
+      return;
+    }
 
     setSelectedOption(null);
     setSubjectiveAnswer('');
     setCodingAnswer('');
     setCodingLanguage('javascript');
-    if (currentQuestion < questions.length - 1) setCurrentQuestion(currentQuestion + 1);
+    setCurrentQuestion(currentQuestion + 1);
   };
 
   if (!questions || questions.length === 0) {
@@ -336,7 +355,7 @@ export default function MultipleChoiceQuestion({
             '&:disabled': { backgroundColor: '#e0e0e0', color: '#aaa' },
           }}
         >
-          {isLastQuestion ? 'Save Answer' : 'Next →'}
+          {isLastQuestion ? 'Submit Test' : 'Next →'}
         </Button>
       </Box>
     </Box>

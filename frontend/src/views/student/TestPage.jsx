@@ -247,16 +247,17 @@ const TestPage = () => {
   useEffect(() => {
     if (!shouldTerminate || terminatedRef.current) return;
     terminatedRef.current = true;
+
+    // Navigate immediately after user clicks OK — saves happen in background
     swal({ title: 'Exam Terminated!', text: 'You have reached 5 violations. Your exam has been submitted.', icon: 'error', button: 'OK', closeOnClickOutside: false, closeOnEsc: false })
       .then(() => navigate('/dashboard'));
-    (async () => {
-      const answers = Object.keys(answersRef.current).length > 0 ? answersRef.current : { terminated: 'terminated' };
-      try { await axiosInstance.post('/api/users/results', { examId, answers, subjectiveAnswers: {} }, { withCredentials: true }); }
-      catch (err) { if (err?.response?.status !== 400) console.error(err); }
-      try {
-        await saveCheatingLogMutation({ ...cheatingLog, username: userInfo?.name, email: userInfo?.email, examId, totalViolations: cheatingLog.totalViolations || 5 }).unwrap();
-      } catch (err) { console.error(err); }
-    })();
+
+    // Background saves — don't block navigation
+    const answers = Object.keys(answersRef.current).length > 0 ? answersRef.current : { terminated: 'terminated' };
+    axiosInstance.post('/api/users/results', { examId, answers, subjectiveAnswers: {} }, { withCredentials: true })
+      .catch((err) => { if (err?.response?.status !== 400) console.error(err); });
+    saveCheatingLogMutation({ ...cheatingLog, username: userInfo?.name, email: userInfo?.email, examId, totalViolations: cheatingLog.totalViolations || 5 })
+      .catch((err) => console.error(err));
   }, [shouldTerminate]);
 
   // Load questions
@@ -285,32 +286,32 @@ const TestPage = () => {
       if (!confirmed) return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const answersObject = answersRef.current || {};
-      const updatedLog = {
-        ...cheatingLog,
-        username: userInfo.name,
-        email: userInfo.email,
-        examId,
-        totalViolations: parseInt(cheatingLog.totalViolations) || 0,
-        screenshots: cheatingLog.screenshots || [],
-      };
+    setIsSubmitting(true);
+    const answersObject = answersRef.current || {};
+
+    // Navigate immediately — don't wait for API calls
+    toast.success('Test submitted successfully!');
+    navigate('/Success');
+
+    // Fire API calls in background after navigation
+    const updatedLog = {
+      ...cheatingLog,
+      username: userInfo.name,
+      email: userInfo.email,
+      examId,
+      totalViolations: parseInt(cheatingLog.totalViolations) || 0,
+      screenshots: cheatingLog.screenshots || [],
+    };
+
+    (async () => {
       try { await saveCheatingLogMutation(updatedLog).unwrap(); }
       catch (logError) { console.error('[TestPage] cheating log error:', logError); }
-
       try {
         await axiosInstance.post('/api/users/results', { examId, answers: answersObject, subjectiveAnswers: {} }, { withCredentials: true });
       } catch (resultError) {
-        if (resultError?.response?.status !== 400) throw resultError;
+        if (resultError?.response?.status !== 400) console.error('[TestPage] result save error:', resultError);
       }
-      toast.success('Test submitted successfully!');
-      navigate('/Success');
-    } catch (error) {
-      toast.error(error?.data?.message || error?.message || 'Failed to submit test.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    })();
   };
 
   const saveUserTestScore = () => setScore((s) => s + 1);
