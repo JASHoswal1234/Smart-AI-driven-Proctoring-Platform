@@ -45,4 +45,28 @@ const createQuestion = asyncHandler(async (req, res) => {
   }
 });
 
-export { getQuestionsByExamId, createQuestion };
+const bulkCreateQuestions = asyncHandler(async (req, res) => {
+  const { examId, questions } = req.body;
+
+  if (!examId) {
+    return res.status(400).json({ error: 'examId is required' });
+  }
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ error: 'questions array is required and must not be empty' });
+  }
+
+  const docs = questions.map((q) => ({
+    question: q.question,
+    questionType: q.questionType || 'mcq',
+    options: q.questionType === 'subjective' ? [] : (q.options || []),
+    modelAnswer: q.questionType === 'subjective' ? (q.modelAnswer || '') : undefined,
+    ansmarks: q.ansmarks || 1,
+    examId,
+  }));
+
+  const created = await Question.insertMany(docs);
+  res.status(201).json({ count: created.length, questions: created });
+});
+
+export { getQuestionsByExamId, createQuestion, bulkCreateQuestions };

@@ -9,6 +9,7 @@ import {
 import {
   createQuestion,
   getQuestionsByExamId,
+  bulkCreateQuestions,
 } from "../controllers/quesController.js";
 import {
   getCheatingLogsByExamId,
@@ -19,6 +20,7 @@ const examRoutes = express.Router();
 // protecting Exam route using auth middleware protect /api/users/
 examRoutes.route("/exam").get(protect, getExams).post(protect, createExam);
 examRoutes.route("/exam/questions").post(protect, createQuestion);
+examRoutes.route("/exam/questions/bulk").post(protect, bulkCreateQuestions);
 examRoutes.route("/questions/exam/:examId").get(protect, getQuestionsByExamId); // Add this
 examRoutes.route("/exam/questions/:examId").get(protect, getQuestionsByExamId);
 examRoutes.route("/cheatingLogs/:examId").get(protect, getCheatingLogsByExamId);

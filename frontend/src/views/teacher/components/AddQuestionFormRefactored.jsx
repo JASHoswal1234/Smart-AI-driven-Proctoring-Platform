@@ -26,10 +26,12 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useCreateQuestionMutation, useGetExamsQuery, useGetQuestionsQuery } from 'src/slices/examApiSlice';
 import { useCreateCodingQuestionMutation, useGetCodingQuestionsQuery } from 'src/slices/codingQuestionApiSlice';
 import { toast } from 'react-toastify';
 import { useSearchParams } from 'react-router-dom';
+import BulkImportModal from './BulkImportModal';
 
 const AddQuestionFormRefactored = () => {
   // URL parameters
@@ -75,6 +77,7 @@ const AddQuestionFormRefactored = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [loadedFromDB, setLoadedFromDB] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
   // Fetch existing questions from database
   const { data: dbQuestions, refetch: refetchQuestions } = useGetQuestionsQuery(selectedExamId, {
@@ -794,6 +797,22 @@ const AddQuestionFormRefactored = () => {
                 Discard Draft
               </Button>
             )}
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<UploadFileIcon />}
+              onClick={() => setBulkImportOpen(true)}
+              disabled={!selectedExamId}
+              fullWidth
+              sx={{
+                borderRadius: '8px',
+                borderColor: '#003974',
+                color: '#003974',
+                '&:hover': { backgroundColor: '#e8f0fe' },
+              }}
+            >
+              Import Questions
+            </Button>
             <Button
               variant="contained"
               size="small"
@@ -1871,6 +1890,17 @@ const AddQuestionFormRefactored = () => {
           </Paper>
         </Box>
       )}
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        open={bulkImportOpen}
+        onClose={() => setBulkImportOpen(false)}
+        examId={selectedExamId}
+        onImported={() => {
+          setLoadedFromDB(false);
+          refetchQuestions();
+        }}
+      />
     </Box>
   );
 };

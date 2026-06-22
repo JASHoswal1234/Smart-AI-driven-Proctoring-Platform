@@ -37,6 +37,14 @@ export const examApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    // Bulk create questions
+    bulkCreateQuestions: builder.mutation({
+      query: (data) => ({
+        url: `${EXAMS_URL}/exam/questions/bulk`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
     //Delete an exam
     deleteExam: builder.mutation({
       query: (examId) => ({
@@ -61,6 +69,7 @@ export const {
   useCreateExamMutation,
   useGetQuestionsQuery,
   useCreateQuestionMutation,
+  useBulkCreateQuestionsMutation,
   useDeleteExamMutation,
   useGetUserResultsQuery,
 } = examApiSlice;
