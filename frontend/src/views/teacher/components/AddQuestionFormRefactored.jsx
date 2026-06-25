@@ -1750,6 +1750,50 @@ const AddQuestionFormRefactored = () => {
                 required
               />
 
+              {/* ── Optional question image ── */}
+              <Box>
+                <Typography variant="caption" fontWeight={600} color="text.secondary"
+                  sx={{ mb: 0.75, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>
+                  Question Image (optional)
+                </Typography>
+                {currentQuestion.imageUrl ? (
+                  <Box>
+                    <img
+                      src={currentQuestion.imageUrl}
+                      alt="Question"
+                      style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, border: '1px solid #e0e0e0', display: 'block' }}
+                    />
+                    <Button
+                      size="small" variant="outlined" color="error"
+                      onClick={() => setCurrentQuestion((prev) => ({ ...prev, imageUrl: null }))}
+                      sx={{ mt: 1, borderRadius: '6px', fontSize: '0.75rem' }}
+                    >
+                      Remove Image
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <input
+                      type="file" accept="image/*"
+                      id="question-image-upload-b"
+                      style={{ display: 'none' }}
+                      onChange={handleQuestionImageUpload}
+                    />
+                    <label htmlFor="question-image-upload-b">
+                      <Button
+                        component="span" variant="outlined" size="small"
+                        disabled={questionImageUploading || !selectedExamId}
+                        startIcon={<UploadFileIcon fontSize="small" />}
+                        sx={{ borderRadius: '8px', borderColor: '#003974', color: '#003974', fontSize: '0.8rem', '&:hover': { backgroundColor: '#f0f4ff' } }}
+                      >
+                        {questionImageUploading ? 'Uploading...' : 'Upload Image'}
+                      </Button>
+                    </label>
+                    <Typography variant="caption" color="text.secondary">JPG, PNG · Max 5MB</Typography>
+                  </Box>
+                )}
+              </Box>
+
               {currentQuestion.questionType === 'mcq' && (
                 <Box>
                   <Typography variant="subtitle2" sx={{ mb: 2 }}>
