@@ -84,6 +84,19 @@ const AddQuestionFormRefactored = () => {
     skip: !selectedExamId,
   });
 
+  // Fetch existing coding questions from database
+  const { data: dbCodingQuestions, refetch: refetchCodingQuestions } = useGetCodingQuestionsQuery(selectedExamId, {
+    skip: !selectedExamId,
+  });
+
+  // Clean up function when component unmounts or exam changes
+  useEffect(() => {
+    return () => {
+      // Cleanup function - reset state when unmounting
+      console.log('Cleanup: Resetting AddQuestions state');
+    };
+  }, []);
+
   // Initialize exam selection (check URL params first, then localStorage, then first exam)
   useEffect(() => {
     const examIdFromUrl = searchParams.get('examId');
@@ -122,6 +135,37 @@ const AddQuestionFormRefactored = () => {
   useEffect(() => {
     if (!selectedExamId) return;
 
+    // CRITICAL: Always clear state first when exam changes
+    setQuestions([]);
+    setCodingQuestions([]);
+    setLoadedFromDB(false); // Reset this flag so DB questions can load
+    setHasUnsavedChanges(false);
+    setCurrentQuestion({
+      id: null,
+      question: '',
+      questionType: 'mcq',
+      ansmarks: 1,
+      difficulty: 'medium',
+      options: [
+        { optionText: '', isCorrect: false },
+        { optionText: '', isCorrect: false },
+        { optionText: '', isCorrect: false },
+        { optionText: '', isCorrect: false },
+      ],
+      modelAnswer: '',
+    });
+    setCurrentCodingQuestion({
+      id: null,
+      question: '',
+      ansmarks: 10,
+      problemDescription: '',
+      sampleInput: '',
+      sampleOutput: '',
+      allowedLanguages: ['JavaScript', 'Python'],
+    });
+    setSelectedQuestionId(null);
+    setSelectedCodingQuestionId(null);
+
     const draftKey = `examDraft_${selectedExamId}`;
     const savedDraft = localStorage.getItem(draftKey);
     
@@ -133,43 +177,28 @@ const AddQuestionFormRefactored = () => {
           if (draft.questions && draft.questions.length > 0) {
             setQuestions(draft.questions);
             setHasUnsavedChanges(true);
-            setLoadedFromDB(false);
-          } else {
-            setLoadedFromDB(false);
-            setQuestions([]);
-            setHasUnsavedChanges(false);
+            setLoadedFromDB(true); // Draft loaded, don't load from DB
           }
           
           if (draft.codingQuestions && draft.codingQuestions.length > 0) {
             setCodingQuestions(draft.codingQuestions);
-          } else {
-            setCodingQuestions([]);
           }
-        } else {
-          // Draft is for a different exam, clear it
-          setLoadedFromDB(false);
-          setQuestions([]);
-          setCodingQuestions([]);
-          setHasUnsavedChanges(false);
         }
       } catch (error) {
         console.error('Failed to load draft:', error);
-        setLoadedFromDB(false);
-        setQuestions([]);
-        setCodingQuestions([]);
-        setHasUnsavedChanges(false);
       }
-    } else {
-      setLoadedFromDB(false);
-      setQuestions([]);
-      setCodingQuestions([]);
-      setHasUnsavedChanges(false);
     }
   }, [selectedExamId]);
 
   // Load existing questions from database if no draft exists
   useEffect(() => {
-    if (!selectedExamId || loadedFromDB || questions.length > 0) return;
+    // Only load from DB if:
+    // 1. We have a selected exam
+    // 2. We haven't loaded from DB yet for this exam
+    // 3. There are no questions in state (no draft was loaded)
+    if (!selectedExamId || loadedFromDB || questions.length > 0 || codingQuestions.length > 0) {
+      return;
+    }
     
     if (dbQuestions && dbQuestions.length > 0) {
       const transformedQuestions = dbQuestions.map((q) => ({
@@ -190,8 +219,32 @@ const AddQuestionFormRefactored = () => {
       setQuestions(transformedQuestions);
       setLoadedFromDB(true);
       setHasUnsavedChanges(false);
+    } else {
+      // No questions in DB for this exam
+      setLoadedFromDB(true);
     }
-  }, [dbQuestions, selectedExamId, loadedFromDB, questions.length]);
+  }, [dbQuestions, selectedExamId, loadedFromDB, questions.length, codingQuestions.length]);
+
+  // Load existing coding questions from database if no draft exists
+  useEffect(() => {
+    if (!selectedExamId || loadedFromDB || questions.length > 0 || codingQuestions.length > 0) {
+      return;
+    }
+    
+    if (dbCodingQuestions && dbCodingQuestions.length > 0) {
+      const transformedCodingQuestions = dbCodingQuestions.map((q) => ({
+        id: q._id,
+        question: q.question,
+        ansmarks: q.ansmarks,
+        problemDescription: q.description || '',
+        sampleInput: q.sampleInput || '',
+        sampleOutput: q.sampleOutput || '',
+        allowedLanguages: q.allowedLanguages || ['JavaScript', 'Python'],
+      }));
+      
+      setCodingQuestions(transformedCodingQuestions);
+    }
+  }, [dbCodingQuestions, selectedExamId, loadedFromDB, questions.length, codingQuestions.length]);
 
   // Auto-save to localStorage every 30 seconds
   useEffect(() => {
@@ -624,6 +677,7 @@ const AddQuestionFormRefactored = () => {
       setSelectedCodingQuestionId(null);
       
       refetchQuestions();
+      refetchCodingQuestions();
     } catch (error) {
       console.error('Failed to publish exam:', error);
       toast.error('Failed to publish exam. Please try again.');
@@ -687,14 +741,10 @@ const AddQuestionFormRefactored = () => {
                   onChange={(e) => {
                     const newExamId = e.target.value;
                     
-                    if (hasUnsavedChanges && (currentQuestion.question || currentCodingQuestion.question)) {
-                      if (!window.confirm('Switching exams will reset the current question form. Continue?')) {
-                        return;
-                      }
-                    }
-                    
-                    setSelectedExamId(newExamId);
+                    // Immediately clear all state when switching exams
                     setLoadedFromDB(false);
+                    setQuestions([]);
+                    setCodingQuestions([]);
                     setCurrentQuestion({
                       id: null,
                       question: '',
@@ -721,6 +771,10 @@ const AddQuestionFormRefactored = () => {
                     setSelectedQuestionId(null);
                     setSelectedCodingQuestionId(null);
                     setValidationErrors({});
+                    setHasUnsavedChanges(false);
+                    
+                    // Now set the new exam
+                    setSelectedExamId(newExamId);
                   }}
                   displayEmpty
                 >
@@ -1899,6 +1953,7 @@ const AddQuestionFormRefactored = () => {
         onImported={() => {
           setLoadedFromDB(false);
           refetchQuestions();
+          refetchCodingQuestions();
         }}
       />
     </Box>
