@@ -158,14 +158,32 @@ export const LoginLeftPanel = () => {
   );
 };
 
-// ── Mobile logo ───────────────────────────────────────────────────────────────
+// ── Mobile logo strip ────────────────────────────────────────────────────────
 export const MobileLogo = () => (
-  <Stack direction="row" alignItems="center" spacing={1.5} mb={4}>
-    <Box sx={{ width: 38, height: 38, borderRadius: '8px', overflow: 'hidden', border: '1px solid #e8eaf0' }}>
+  <Box
+    sx={{
+      width: '100%',
+      backgroundColor: '#003974',
+      px: 3,
+      py: 2.5,
+      mb: 4,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 1.5,
+    }}
+  >
+    <Box sx={{ width: 44, height: 44, borderRadius: '10px', overflow: 'hidden', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       <img src="/logo.png" alt="ProctAI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
     </Box>
-    <Typography fontWeight={900} color="#003974" sx={{ fontSize: '1.5rem', letterSpacing: '-0.5px' }}>ProctAI</Typography>
-  </Stack>
+    <Box>
+      <Typography sx={{ fontWeight: 900, color: '#fff', fontSize: '1.5rem', letterSpacing: '-0.5px', lineHeight: 1 }}>
+        ProctAI
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem' }}>
+        AI-Powered Assessment Platform
+      </Typography>
+    </Box>
+  </Box>
 );
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -213,13 +231,13 @@ const Login = () => {
           sx={{
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
-            p: { xs: 3, sm: 5, md: 6 },
+            p: { xs: 0, sm: 5, md: 6 },
             backgroundColor: '#fff',
           }}
         >
           {isMobile && <MobileLogo />}
 
-          <Box sx={{ width: '100%', maxWidth: 420 }}>
+          <Box sx={{ width: '100%', maxWidth: 420, px: { xs: 3, sm: 0 } }}>
             <Box mb={4}>
               <Typography variant="h4" fontWeight={800} color="#0F2242" mb={0.5}>Welcome back</Typography>
               <Typography variant="body2" color="text.secondary">Sign in to continue to ProctAI.</Typography>
