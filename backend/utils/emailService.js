@@ -30,223 +30,240 @@ export const sendResultEmail = async (userEmail, userName, examDetails, resultDa
     const { totalScore, percentage, mcqScore, subjectiveScore, maxPossible } = resultData;
     const performance = getPerformanceMessage(percentage);
 
+    // Calculate grade
+    const grade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : percentage >= 50 ? 'D' : 'F';
+    
+    // Format date
+    const examDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const examTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    // Calculate progress bar width
+    const progressWidth = Math.round(percentage);
+
     const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            line-height: 1.6; 
-            color: #333; 
-            margin: 0; 
-            padding: 0; 
-            background-color: #f4f4f4;
-          }
-          .container { 
-            max-width: 600px; 
-            margin: 20px auto; 
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-          }
-          .header { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            padding: 30px 20px; 
-            text-align: center; 
-          }
-          .header h1 { margin: 0; font-size: 28px; }
-          .content { 
-            padding: 30px 20px; 
-          }
-          .greeting { 
-            font-size: 18px; 
-            margin-bottom: 20px; 
-            color: #555;
-          }
-          .result-card { 
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 25px; 
-            margin: 20px 0; 
-            border-radius: 10px; 
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-          }
-          .score { 
-            font-size: 48px; 
-            font-weight: bold; 
-            margin: 10px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-          }
-          .score-label { 
-            font-size: 16px; 
-            opacity: 0.9; 
-          }
-          .details-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 15px; 
-            margin: 20px 0; 
-          }
-          .detail-item { 
-            background: #f8f9fa; 
-            padding: 15px; 
-            border-radius: 8px; 
-            text-align: center;
-            border-left: 4px solid #667eea;
-          }
-          .detail-label { 
-            font-size: 12px; 
-            color: #666; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-          }
-          .detail-value { 
-            font-size: 20px; 
-            font-weight: bold; 
-            color: #333; 
-            margin-top: 5px;
-          }
-          .performance-message { 
-            background: #e8f5e8; 
-            border: 1px solid #4caf50; 
-            border-radius: 8px; 
-            padding: 20px; 
-            margin: 20px 0; 
-            text-align: center;
-          }
-          .performance-emoji { 
-            font-size: 32px; 
-            margin-bottom: 10px; 
-          }
-          .exam-info { 
-            background: #fff3cd; 
-            border: 1px solid #ffeaa7; 
-            border-radius: 8px; 
-            padding: 15px; 
-            margin: 20px 0; 
-          }
-          .footer { 
-            background: #f8f9fa; 
-            text-align: center; 
-            padding: 20px; 
-            color: #666; 
-            font-size: 14px; 
-            border-top: 1px solid #eee;
-          }
-          .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 25px;
-            margin: 20px 0;
-            font-weight: bold;
-          }
-          @media (max-width: 600px) {
-            .details-grid { grid-template-columns: 1fr; }
-            .score { font-size: 36px; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>📊 Exam Results</h1>
-          </div>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Exam Results - ProctAI</title>
+  <style type="text/css">
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background-color: #F8FAFC; }
+    table { border-collapse: collapse; }
+    img { border: 0; display: block; }
+    .wrapper { width: 100%; background-color: #F8FAFC; }
+    .email-container { max-width: 600px; margin: 0 auto; background-color: #FFFFFF; }
+    
+    /* Typography */
+    .heading { font-size: 32px; font-weight: 700; color: #0F172A; margin: 0; padding: 0; line-height: 1.2; }
+    .body-text { font-size: 16px; color: #0F172A; line-height: 1.6; margin: 0; padding: 0; }
+    .secondary-text { font-size: 16px; color: #64748B; line-height: 1.6; margin: 0; padding: 0; }
+    .small-text { font-size: 14px; color: #64748B; line-height: 1.5; margin: 0; padding: 0; }
+    .label { font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em; margin: 0; padding: 0; }
+    
+    /* Components */
+    .divider { height: 1px; background-color: #E5E7EB; }
+    .button { display: inline-block; padding: 14px 28px; background-color: #2563EB; color: #FFFFFF !important; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; }
+    .button:hover { background-color: #1d4ed8; }
+    
+    /* Progress Bar */
+    .progress-container { width: 100%; height: 8px; background-color: #E5E7EB; border-radius: 10px; overflow: hidden; }
+    .progress-bar { height: 8px; background-color: #2563EB; border-radius: 10px; }
+    
+    /* Info Table */
+    .info-table { width: 100%; border: 1px solid #E5E7EB; border-radius: 10px; }
+    .info-table td { padding: 12px 16px; border-bottom: 1px solid #E5E7EB; }
+    .info-table tr:last-child td { border-bottom: none; }
+    
+    /* Performance Table */
+    .perf-table { width: 100%; border: 1px solid #E5E7EB; border-radius: 10px; }
+    .perf-table td { padding: 14px 16px; border-bottom: 1px solid #E5E7EB; }
+    .perf-table tr:last-child td { border-bottom: none; }
+    .perf-table .metric-label { font-weight: 600; color: #0F172A; }
+    .perf-table .metric-value { font-weight: 700; color: #0F172A; text-align: right; }
+    
+    /* Insight Box */
+    .insight-box { border: 1px solid #E5E7EB; border-radius: 10px; padding: 20px; background-color: #FFFFFF; }
+    
+    /* Mobile Responsive */
+    @media only screen and (max-width: 600px) {
+      .heading { font-size: 24px !important; }
+      .body-text, .secondary-text { font-size: 15px !important; }
+      .button { display: block !important; width: 100% !important; text-align: center; }
+      .mobile-padding { padding: 20px !important; }
+      .mobile-stack { display: block !important; width: 100% !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0;">
+  <table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        
+        <!-- Email Container -->
+        <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color: #FFFFFF; box-shadow: 0 2px 8px rgba(15,23,42,.05);">
           
-          <div class="content">
-            <div class="greeting">
-              Hello <strong>${userName}</strong>! 👋
-            </div>
-            
-            <p>Your exam results are ready! Here's a detailed breakdown of your performance:</p>
-            
-            <div class="exam-info">
-              <strong>📝 Exam:</strong> ${examDetails.title || 'N/A'}<br>
-              <strong>📅 Date:</strong> ${new Date().toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}<br>
-              <strong>⏰ Time:</strong> ${new Date().toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}
-            </div>
-
-            <div class="result-card">
-              <div class="score">${percentage.toFixed(1)}%</div>
-              <div class="score-label">Overall Score</div>
-            </div>
-
-            <div class="details-grid">
-              <div class="detail-item">
-                <div class="detail-label">Total Score</div>
-                <div class="detail-value">${totalScore} / ${maxPossible}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">MCQ Score</div>
-                <div class="detail-value">${mcqScore}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Subjective Score</div>
-                <div class="detail-value">${subjectiveScore}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Grade</div>
-                <div class="detail-value">${percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : percentage >= 50 ? 'D' : 'F'}</div>
-              </div>
-            </div>
-
-            <div class="performance-message">
-              <div class="performance-emoji">${performance.emoji}</div>
-              <strong>${performance.message}</strong>
-            </div>
-
-            <p style="text-align: center;">
-              <a href="#" class="cta-button">View Detailed Results</a>
-            </p>
-
-            <p style="color: #666; font-size: 14px;">
-              💡 <strong>Tip:</strong> Log into your account to view detailed feedback and correct answers for better preparation next time.
-            </p>
-          </div>
+          <!-- Header -->
+          <tr>
+            <td style="padding: 32px 40px; border-bottom: 1px solid #E5E7EB;" class="mobile-padding">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <p style="font-size: 20px; font-weight: 700; color: #0F172A; margin: 0; padding: 0;">ProctAI</p>
+                  </td>
+                  <td align="right">
+                    <p class="label" style="color: #2563EB; margin: 0;">EXAM RESULTS</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
           
-          <div class="footer">
-            <p>This is an automated email from the Exam Platform.<br>
-            Please do not reply to this email.</p>
-            <p style="font-size: 12px; margin-top: 10px;">
-              © ${new Date().getFullYear()} Exam Platform. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
+          <!-- Greeting -->
+          <tr>
+            <td style="padding: 40px 40px 24px 40px;" class="mobile-padding">
+              <h1 class="heading">Hi ${userName.split(' ')[0]},</h1>
+              <p class="secondary-text" style="margin-top: 16px;">Your assessment has been completed successfully. Here's a summary of your performance.</p>
+            </td>
+          </tr>
+          
+          <!-- Exam Information Table -->
+          <tr>
+            <td style="padding: 0 40px 32px 40px;" class="mobile-padding">
+              <table role="presentation" class="info-table" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="width: 40%;">
+                    <p class="label">EXAM</p>
+                  </td>
+                  <td>
+                    <p class="body-text" style="font-weight: 600;">${examDetails.title || 'Exam'}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p class="label">DATE</p>
+                  </td>
+                  <td>
+                    <p class="body-text">${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p class="label">TIME</p>
+                  </td>
+                  <td>
+                    <p class="body-text">${examTime}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Overall Score Section -->
+          <tr>
+            <td style="padding: 0 40px 32px 40px;" class="mobile-padding">
+              <p class="label" style="margin-bottom: 12px;">OVERALL SCORE</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-bottom: 12px;">
+                    <p style="font-size: 48px; font-weight: 700; color: #2563EB; margin: 0; line-height: 1;">${percentage.toFixed(1)}%</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="progress-container">
+                      <div class="progress-bar" style="width: ${progressWidth}%;"></div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Performance Summary Table -->
+          <tr>
+            <td style="padding: 0 40px 32px 40px;" class="mobile-padding">
+              <p class="label" style="margin-bottom: 12px;">PERFORMANCE SUMMARY</p>
+              <table role="presentation" class="perf-table" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="metric-label">Total Score</td>
+                  <td class="metric-value">${totalScore} / ${maxPossible}</td>
+                </tr>
+                <tr>
+                  <td class="metric-label">MCQ</td>
+                  <td class="metric-value">${mcqScore}</td>
+                </tr>
+                <tr>
+                  <td class="metric-label">Subjective</td>
+                  <td class="metric-value">${subjectiveScore}</td>
+                </tr>
+                <tr>
+                  <td class="metric-label">Grade</td>
+                  <td class="metric-value">${grade}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Performance Insight -->
+          <tr>
+            <td style="padding: 0 40px 32px 40px;" class="mobile-padding">
+              <div class="insight-box">
+                <p class="label" style="margin-bottom: 12px;">PERFORMANCE INSIGHT</p>
+                <p class="body-text">${performance.message}</p>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- CTA Button -->
+          <tr>
+            <td align="center" style="padding: 0 40px 40px 40px;" class="mobile-padding">
+              <a href="#" class="button">View Detailed Results</a>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 32px 40px; border-top: 1px solid #E5E7EB; background-color: #F8FAFC;" class="mobile-padding">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <p class="small-text">Questions? <a href="mailto:adminproctai@gmail.com" style="color: #2563EB; text-decoration: none;">adminproctai@gmail.com</a></p>
+                    <p class="small-text" style="margin-top: 8px;">© ${new Date().getFullYear()} ProctAI</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+        </table>
+        
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `;
 
     const mailOptions = {
-      from: `"Exam Platform" <${process.env.EMAIL_FROM}>`,
+      from: `"ProctAI" <${process.env.EMAIL_FROM}>`,
       to: userEmail,
-      subject: `🎯 Your Exam Results - ${examDetails.title || 'Exam'} (${percentage.toFixed(1)}%)`,
+      subject: `Your Exam Results - ${examDetails.title || 'Exam'} (${percentage.toFixed(1)}%)`,
       html: htmlContent,
       text: `
-Hello ${userName}!
+Hi ${userName}!
 
 Your exam results are ready:
 
 Exam: ${examDetails.title || 'N/A'}
+Date: ${examDate}
+Time: ${examTime}
+
 Overall Score: ${percentage.toFixed(1)}%
 Total Score: ${totalScore} / ${maxPossible}
 MCQ Score: ${mcqScore}
 Subjective Score: ${subjectiveScore}
+Grade: ${grade}
 
 ${performance.message}
 
