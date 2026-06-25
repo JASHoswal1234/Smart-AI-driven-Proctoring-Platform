@@ -25,7 +25,7 @@ const YAW_LEFT_MAX  = 0.55;
 const YAW_RIGHT_MIN = 1.45;
 const YAW_CENTER_LO = 0.75;
 const YAW_CENTER_HI = 1.25;
-const FACE_STEPS = ['Turn LEFT', 'Turn RIGHT', 'Face CENTER'];
+const FACE_STEPS = ['Turn RIGHT', 'Turn LEFT', 'Face CENTER'];
 
 export default function SystemCheck() {
   const navigate   = useNavigate();

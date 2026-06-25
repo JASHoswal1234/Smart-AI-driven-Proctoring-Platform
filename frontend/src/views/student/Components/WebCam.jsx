@@ -10,8 +10,19 @@ import '@tensorflow/tfjs-backend-webgl';
 
 // Cooldown per violation type in ms
 const COOLDOWN_MS = 8000;
-// Frames looking away before triggering
-const AWAY_FRAME_THRESHOLD = 20;
+// Frames looking away before triggering (2 frames = ~2 seconds)
+const AWAY_FRAME_THRESHOLD = 2;
+// Consecutive frames needed to confirm no-face (reduces false positives)
+const NO_FACE_CONFIRMATION_FRAMES = 2;
+// Multiple faces needs MORE frames - strictest check (must see 2+ faces for 3 consecutive frames)
+const MULTIPLE_FACE_CONFIRMATION_FRAMES = 3;
+// Cell phone only needs 1 frame (faster detection, partial phone visible)
+const CELLPHONE_CONFIRMATION_FRAMES = 1;
+// Book/laptop need 2 frames (balance speed vs false positives)
+const OBJECT_CONFIRMATION_FRAMES = 2;
+// Lower confidence for cell phone (partial visibility), higher for books/laptops
+const CELLPHONE_CONFIDENCE_THRESHOLD = 0.55;
+const OBJECT_CONFIDENCE_THRESHOLD = 0.75;
 
 export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, compact = false }) {
   const webcamRef = useRef(null);
@@ -23,6 +34,11 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
   const cooldownMapRef = useRef({});
   const totalViolationsRef = useRef(0);
   const onTerminateRef = useRef(onTerminate); // always latest
+  
+  // Confirmation counters for reducing false positives
+  const noFaceFramesRef = useRef(0);
+  const multipleFaceFramesRef = useRef(0);
+  const objectDetectionRef = useRef({ cellPhone: 0, book: 0, laptop: 0 });
 
   // Keep refs in sync
   useEffect(() => { onTerminateRef.current = onTerminate; }, [onTerminate]);
@@ -133,17 +149,37 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
       // Stop processing if 5+ violations
       if (totalViolationsRef.current >= 5) return;
 
+      // No face detected
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        noFaceFramesRef.current++;
+        multipleFaceFramesRef.current = 0; // Reset other counter
         awayFramesRef.current = 0;
-        handleViolation('noFace', 'No face detected');
+        
+        // Only trigger violation after consecutive frames
+        if (noFaceFramesRef.current >= NO_FACE_CONFIRMATION_FRAMES) {
+          noFaceFramesRef.current = 0; // Reset after triggering
+          handleViolation('noFace', 'No face detected');
+        }
         return;
       }
 
-      if (results.multiFaceLandmarks.length > 1) {
+      // Multiple faces detected - STRICT: only trigger when exactly 2+ faces clearly detected
+      if (results.multiFaceLandmarks.length >= 2) {
+        multipleFaceFramesRef.current++;
+        noFaceFramesRef.current = 0; // Reset other counter
         awayFramesRef.current = 0;
-        handleViolation('multipleFace', 'Multiple faces detected');
+        
+        // Only trigger violation after consecutive frames with 2+ faces
+        if (multipleFaceFramesRef.current >= MULTIPLE_FACE_CONFIRMATION_FRAMES) {
+          multipleFaceFramesRef.current = 0; // Reset after triggering
+          handleViolation('multipleFace', `${results.multiFaceLandmarks.length} faces detected`);
+        }
         return;
       }
+
+      // Valid single face detected - reset all counters
+      noFaceFramesRef.current = 0;
+      multipleFaceFramesRef.current = 0;
 
       // Head pose
       const lm = results.multiFaceLandmarks[0];
@@ -166,7 +202,7 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
           handleViolation('lookingAway', 'Please look at the screen');
         }
       } else {
-        awayFramesRef.current = 0;
+        awayFramesRef.current = 0; // Reset when looking forward
       }
     });
 
@@ -209,11 +245,39 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
         const objects = await net.detect(video);
         drawRect(objects, canvas.getContext('2d'));
 
+        // Reset all object counters first
+        const detectedNow = { cellPhone: false, book: false, laptop: false };
+
         objects.forEach(({ class: cls, score }) => {
-          if (score < 0.6) return; // ignore low-confidence detections
-          if (cls === 'cell phone') handleViolation('cellPhone', 'Cell phone detected');
-          if (cls === 'book') handleViolation('prohibitedObject', 'Book detected');
-          if (cls === 'laptop') handleViolation('prohibitedObject', 'Laptop detected');
+          // Cell phone: lower confidence, detects partial phones
+          if (cls === 'cell phone' && score >= CELLPHONE_CONFIDENCE_THRESHOLD) {
+            detectedNow.cellPhone = true;
+          }
+          // Books/laptops: higher confidence
+          if (cls === 'book' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
+            detectedNow.book = true;
+          }
+          if (cls === 'laptop' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
+            detectedNow.laptop = true;
+          }
+        });
+
+        // Increment counters for detected objects, reset others
+        Object.keys(detectedNow).forEach((objType) => {
+          if (detectedNow[objType]) {
+            objectDetectionRef.current[objType]++;
+            // Cell phone needs fewer frames for faster detection
+            const threshold = objType === 'cellPhone' ? CELLPHONE_CONFIRMATION_FRAMES : OBJECT_CONFIRMATION_FRAMES;
+            
+            if (objectDetectionRef.current[objType] >= threshold) {
+              objectDetectionRef.current[objType] = 0; // Reset after triggering
+              if (objType === 'cellPhone') handleViolation('cellPhone', 'Cell phone detected');
+              if (objType === 'book') handleViolation('prohibitedObject', 'Book detected');
+              if (objType === 'laptop') handleViolation('prohibitedObject', 'Laptop detected');
+            }
+          } else {
+            objectDetectionRef.current[objType] = 0; // Reset if not detected
+          }
         });
       }, 1000); // run every 1s instead of 500ms
     };
