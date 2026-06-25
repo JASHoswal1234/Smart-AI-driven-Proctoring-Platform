@@ -9,7 +9,7 @@ const getQuestionsByExamId = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "examId is missing or invalid" });
   }
 
-  const questions = await Question.find({ examId }).sort({ createdAt: 1 });
+  const questions = await Question.find({ examId }).sort({ sequenceNo: 1, createdAt: 1 });
   console.log(`Found ${questions.length} questions:`, questions.map(q => ({ 
     id: q._id, 
     type: q.questionType, 
@@ -20,7 +20,7 @@ const getQuestionsByExamId = asyncHandler(async (req, res) => {
 });
 
 const createQuestion = asyncHandler(async (req, res) => {
-  const { question, options, examId, questionType, modelAnswer, ansmarks } = req.body;
+  const { question, options, examId, questionType, modelAnswer, ansmarks, sequenceNo } = req.body;
 
   if (!examId) {
     return res.status(400).json({ error: "examId is missing or invalid" });
@@ -33,6 +33,7 @@ const createQuestion = asyncHandler(async (req, res) => {
     modelAnswer: questionType === "subjective" ? modelAnswer : undefined,
     ansmarks: ansmarks || 0,
     examId,
+    sequenceNo: sequenceNo ?? 0,
   });
 
   const createdQuestion = await newQuestion.save();

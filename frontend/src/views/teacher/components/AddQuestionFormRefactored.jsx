@@ -79,6 +79,12 @@ const AddQuestionFormRefactored = () => {
   const [loadedFromDB, setLoadedFromDB] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
+  // Track which examId the currently loaded DB data belongs to
+  // This prevents stale RTK Query data from a previous exam leaking into a new one
+  const loadedExamIdRef = React.useRef(null);
+  // Monotonic counter for local question IDs — avoids Date.now() collisions
+  const questionIdCounter = React.useRef(Date.now());
+
   // Fetch existing questions from database
   const { data: dbQuestions, refetch: refetchQuestions } = useGetQuestionsQuery(selectedExamId, {
     skip: !selectedExamId,
@@ -192,15 +198,14 @@ const AddQuestionFormRefactored = () => {
 
   // Load existing questions from database if no draft exists
   useEffect(() => {
-    // Only load from DB if:
-    // 1. We have a selected exam
-    // 2. We haven't loaded from DB yet for this exam
-    // 3. There are no questions in state (no draft was loaded)
-    if (!selectedExamId || loadedFromDB || questions.length > 0 || codingQuestions.length > 0) {
-      return;
-    }
-    
-    if (dbQuestions && dbQuestions.length > 0) {
+    // Guard: only load if the DB data actually belongs to the currently selected exam
+    if (!selectedExamId || loadedFromDB || questions.length > 0 || codingQuestions.length > 0) return;
+    if (!dbQuestions) return;
+    // Stale check: RTK Query may still hold previous exam's data
+    // We infer this by checking if ANY returned question has a different examId
+    if (dbQuestions.length > 0 && dbQuestions[0].examId !== selectedExamId) return;
+
+    if (dbQuestions.length > 0) {
       const transformedQuestions = dbQuestions.map((q) => ({
         id: q._id,
         question: q.question,
@@ -208,30 +213,25 @@ const AddQuestionFormRefactored = () => {
         ansmarks: q.ansmarks,
         difficulty: 'medium',
         options: q.options || [
-          { optionText: '', isCorrect: false },
-          { optionText: '', isCorrect: false },
-          { optionText: '', isCorrect: false },
-          { optionText: '', isCorrect: false },
+          { optionText: '', isCorrect: false }, { optionText: '', isCorrect: false },
+          { optionText: '', isCorrect: false }, { optionText: '', isCorrect: false },
         ],
         modelAnswer: q.modelAnswer || '',
       }));
-      
       setQuestions(transformedQuestions);
-      setLoadedFromDB(true);
-      setHasUnsavedChanges(false);
-    } else {
-      // No questions in DB for this exam
-      setLoadedFromDB(true);
+      loadedExamIdRef.current = selectedExamId;
     }
+    setLoadedFromDB(true);
   }, [dbQuestions, selectedExamId, loadedFromDB, questions.length, codingQuestions.length]);
 
   // Load existing coding questions from database if no draft exists
   useEffect(() => {
-    if (!selectedExamId || loadedFromDB || questions.length > 0 || codingQuestions.length > 0) {
-      return;
-    }
-    
-    if (dbCodingQuestions && dbCodingQuestions.length > 0) {
+    if (!selectedExamId || loadedFromDB || questions.length > 0 || codingQuestions.length > 0) return;
+    if (!dbCodingQuestions) return;
+    // Stale check
+    if (dbCodingQuestions.length > 0 && dbCodingQuestions[0].examId !== selectedExamId) return;
+
+    if (dbCodingQuestions.length > 0) {
       const transformedCodingQuestions = dbCodingQuestions.map((q) => ({
         id: q._id,
         question: q.question,
@@ -241,7 +241,6 @@ const AddQuestionFormRefactored = () => {
         sampleOutput: q.sampleOutput || '',
         allowedLanguages: q.allowedLanguages || ['JavaScript', 'Python'],
       }));
-      
       setCodingQuestions(transformedCodingQuestions);
     }
   }, [dbCodingQuestions, selectedExamId, loadedFromDB, questions.length, codingQuestions.length]);
@@ -390,7 +389,7 @@ const AddQuestionFormRefactored = () => {
       setQuestions(questions.map(q => q.id === currentQuestion.id ? { ...currentQuestion } : q));
       toast.success('Question updated in draft');
     } else {
-      const newQuestion = { ...currentQuestion, id: Date.now() };
+      const newQuestion = { ...currentQuestion, id: ++questionIdCounter.current };
       setQuestions([...questions, newQuestion]);
       toast.success('Question added to draft');
     }
@@ -400,7 +399,7 @@ const AddQuestionFormRefactored = () => {
     const draftKey = `examDraft_${selectedExamId}`;
     const updatedQuestions = currentQuestion.id 
       ? questions.map(q => q.id === currentQuestion.id ? { ...currentQuestion } : q)
-      : [...questions, { ...currentQuestion, id: Date.now() }];
+      : [...questions, { ...currentQuestion, id: questionIdCounter.current }];
     
     localStorage.setItem(
       draftKey,
@@ -453,7 +452,7 @@ const AddQuestionFormRefactored = () => {
       setCodingQuestions(codingQuestions.map(q => q.id === currentCodingQuestion.id ? { ...currentCodingQuestion } : q));
       toast.success('Coding question updated in draft');
     } else {
-      const newQuestion = { ...currentCodingQuestion, id: Date.now() };
+      const newQuestion = { ...currentCodingQuestion, id: ++questionIdCounter.current };
       setCodingQuestions([...codingQuestions, newQuestion]);
       toast.success('Coding question added to draft');
     }
@@ -463,7 +462,7 @@ const AddQuestionFormRefactored = () => {
     const draftKey = `examDraft_${selectedExamId}`;
     const updatedCodingQuestions = currentCodingQuestion.id 
       ? codingQuestions.map(q => q.id === currentCodingQuestion.id ? { ...currentCodingQuestion } : q)
-      : [...codingQuestions, { ...currentCodingQuestion, id: Date.now() }];
+      : [...codingQuestions, { ...currentCodingQuestion, id: questionIdCounter.current }];
     
     localStorage.setItem(
       draftKey,
@@ -584,7 +583,7 @@ const AddQuestionFormRefactored = () => {
     setValidationErrors({});
   };
 
-  // Publish all questions to database (BATCH SAVE)
+  // Publish all questions to database (BATCH SAVE — sequential to preserve order)
   const handleSaveExam = async () => {
     if (selectedExam?.hasCodingRound && codingQuestions.length === 0) {
       toast.error('This exam requires coding questions. Please add at least one coding question before publishing.');
@@ -599,47 +598,42 @@ const AddQuestionFormRefactored = () => {
     setIsPublishing(true);
 
     try {
-      const savePromises = questions.map(async (q) => {
+      // ── Save MCQ/subjective questions SEQUENTIALLY to preserve order ──────────
+      // Promise.all fires in parallel → identical createdAt → random sort order.
+      // Sequential awaits guarantee createdAt strictly increases per question.
+      for (const [index, q] of questions.entries()) {
         const payload = {
           examId: selectedExamId,
           question: q.question,
           questionType: q.questionType,
           ansmarks: q.ansmarks,
+          sequenceNo: index,
         };
 
         if (q.questionType === 'mcq') {
           payload.options = q.options
             .filter(opt => opt.optionText.trim() !== '')
-            .map(opt => ({
-              optionText: opt.optionText,
-              isCorrect: opt.isCorrect,
-            }));
+            .map(opt => ({ optionText: opt.optionText, isCorrect: opt.isCorrect }));
         } else {
           payload.modelAnswer = q.modelAnswer;
         }
 
-        return createQuestion(payload).unwrap();
-      });
-
-      if (codingQuestions.length > 0) {
-        const codingSavePromises = codingQuestions.map(async (q) => {
-          const payload = {
-            examId: selectedExamId,
-            question: q.question,
-            description: q.problemDescription,
-            ansmarks: q.ansmarks,
-            sampleInput: q.sampleInput || "",
-            sampleOutput: q.sampleOutput || "",
-            allowedLanguages: q.allowedLanguages,
-          };
-
-          return createCodingQuestion(payload).unwrap();
-        });
-        
-        savePromises.push(...codingSavePromises);
+        await createQuestion(payload).unwrap();
       }
 
-      await Promise.all(savePromises);
+      // ── Save coding questions sequentially too ──────────────────────────────
+      for (const [index, q] of codingQuestions.entries()) {
+        await createCodingQuestion({
+          examId: selectedExamId,
+          question: q.question,
+          description: q.problemDescription,
+          ansmarks: q.ansmarks,
+          sampleInput: q.sampleInput || '',
+          sampleOutput: q.sampleOutput || '',
+          allowedLanguages: q.allowedLanguages,
+          sequenceNo: questions.length + index,
+        }).unwrap();
+      }
 
       const draftKey = `examDraft_${selectedExamId}`;
       localStorage.removeItem(draftKey);
@@ -651,27 +645,16 @@ const AddQuestionFormRefactored = () => {
       setCodingQuestions([]);
       setLoadedFromDB(false);
       setCurrentQuestion({
-        id: null,
-        question: '',
-        questionType: 'mcq',
-        ansmarks: 1,
-        difficulty: 'medium',
+        id: null, question: '', questionType: 'mcq', ansmarks: 1, difficulty: 'medium',
         options: [
-          { optionText: '', isCorrect: false },
-          { optionText: '', isCorrect: false },
-          { optionText: '', isCorrect: false },
-          { optionText: '', isCorrect: false },
+          { optionText: '', isCorrect: false }, { optionText: '', isCorrect: false },
+          { optionText: '', isCorrect: false }, { optionText: '', isCorrect: false },
         ],
         modelAnswer: '',
       });
       setCurrentCodingQuestion({
-        id: null,
-        question: '',
-        ansmarks: 10,
-        problemDescription: '',
-        sampleInput: '',
-        sampleOutput: '',
-        allowedLanguages: ['JavaScript', 'Python'],
+        id: null, question: '', ansmarks: 10, problemDescription: '',
+        sampleInput: '', sampleOutput: '', allowedLanguages: ['JavaScript', 'Python'],
       });
       setSelectedQuestionId(null);
       setSelectedCodingQuestionId(null);

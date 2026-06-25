@@ -36,6 +36,10 @@ const questionSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    sequenceNo: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
