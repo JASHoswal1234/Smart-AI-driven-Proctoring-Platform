@@ -9,14 +9,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Add as AddIcon, CheckCircleOutline, AccessTimeOutlined, AssignmentOutlined, TrendingUpOutlined } from '@mui/icons-material';
 import { Helmet } from 'react-helmet';
 
-const StatChip = ({ icon: Icon, label, value, color = '#003974', bg = '#EEF3FB' }) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, backgroundColor: bg, borderRadius: '12px', px: 2.5, py: 1.5, minWidth: 120 }}>
-    <Box sx={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <Icon sx={{ color: '#fff', fontSize: 18 }} />
+const StatChip = ({ icon: Icon, label, value }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, backgroundColor: '#EEF3FB', borderRadius: '12px', px: 2.5, py: 1.5, minWidth: 110 }}>
+    <Box sx={{ width: 34, height: 34, borderRadius: '9px', backgroundColor: '#003974', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <Icon sx={{ color: '#fff', fontSize: 17 }} />
     </Box>
     <Box>
-      <Typography variant="h6" sx={{ fontWeight: 800, color, lineHeight: 1, fontSize: '1.25rem' }}>{value}</Typography>
-      <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 500, fontSize: '0.7rem', whiteSpace: 'nowrap' }}>{label}</Typography>
+      <Typography variant="h6" sx={{ fontWeight: 800, color: '#003974', lineHeight: 1, fontSize: '1.15rem' }}>{value}</Typography>
+      <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 500, fontSize: '0.68rem', whiteSpace: 'nowrap' }}>{label}</Typography>
     </Box>
   </Box>
 );
@@ -89,7 +89,7 @@ const Dashboard = () => {
       <Box sx={{ width: '100%', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4 }, backgroundColor: '#F5F7FA', minHeight: '100vh' }}>
 
         {/* ── Hero / Welcome ── */}
-        <Paper elevation={0} sx={{ mb: 4, borderRadius: '20px', overflow: 'hidden', border: '1px solid #e8eaf0' }}>
+        <Paper elevation={0} sx={{ mb: 4, borderRadius: '16px', overflow: 'hidden', border: '1px solid #e8eaf0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           {/* Top navy strip */}
           <Box sx={{ backgroundColor: '#003974', px: { xs: 3, md: 4 }, pt: 3, pb: 4 }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between" spacing={2}>
@@ -125,10 +125,10 @@ const Dashboard = () => {
           {/* Stats row */}
           <Box sx={{ px: { xs: 3, md: 4 }, py: 2.5, backgroundColor: '#fff' }}>
             <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ gap: { xs: 1.5, md: 2 } }}>
-              <StatChip icon={AssignmentOutlined} label="Total Exams" value={totalExams} color="#003974" bg="#EEF3FB" />
-              <StatChip icon={CheckCircleOutline} label="Completed" value={completedExams} color="#16a34a" bg="#f0fdf4" />
-              <StatChip icon={AccessTimeOutlined} label="Pending" value={Math.max(0, activeExams.length)} color="#d97706" bg="#fffbeb" />
-              {!isTeacher && <StatChip icon={TrendingUpOutlined} label="Avg Score" value={`${averageScore}%`} color="#6366f1" bg="#f5f3ff" />}
+              <StatChip icon={AssignmentOutlined} label="Total Exams" value={totalExams} />
+              <StatChip icon={CheckCircleOutline} label="Completed" value={completedExams} />
+              <StatChip icon={AccessTimeOutlined} label="Active Now" value={activeExams.length} />
+              {!isTeacher && <StatChip icon={TrendingUpOutlined} label="Avg Score" value={`${averageScore}%`} />}
             </Stack>
           </Box>
         </Paper>

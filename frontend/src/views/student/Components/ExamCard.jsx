@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Typography, Chip, Stack, Button } from '@mui/material';
+import { Box, Typography, Stack, Button, Chip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -13,20 +13,18 @@ import { useDeleteExamMutation } from 'src/slices/examApiSlice';
 import { useGetCodingQuestionsQuery } from 'src/slices/codingQuestionApiSlice';
 import axiosInstance from 'src/axios';
 
-// Deterministic accent color per exam
-const ACCENTS = ['#003974', '#6366f1', '#0891b2', '#16a34a', '#d97706', '#dc2626'];
-const getAccent = (examId) => ACCENTS[(examId?.charCodeAt(0) || 0) % ACCENTS.length];
+const PRIMARY = '#003974';
 
 const StatusBadge = ({ status }) => {
   const map = {
-    active:   { label: 'Active',   bg: '#dcfce7', color: '#166534' },
-    upcoming: { label: 'Upcoming', bg: '#fef9c3', color: '#854d0e' },
-    expired:  { label: 'Expired',  bg: '#fee2e2', color: '#991b1b' },
+    active:   { label: 'Active',   bg: 'rgba(255,255,255,0.18)', color: '#fff' },
+    upcoming: { label: 'Upcoming', bg: 'rgba(255,255,255,0.18)', color: '#fff' },
+    expired:  { label: 'Expired',  bg: 'rgba(255,255,255,0.18)', color: '#fff' },
   };
   const s = map[status] || map.active;
   return (
     <Chip label={s.label} size="small"
-      sx={{ backgroundColor: s.bg, color: s.color, fontWeight: 700, fontSize: '0.7rem', height: 22, borderRadius: '6px' }}
+      sx={{ backgroundColor: s.bg, color: s.color, fontWeight: 700, fontSize: '0.68rem', height: 20, borderRadius: '6px', border: '1px solid rgba(255,255,255,0.25)' }}
     />
   );
 };
@@ -40,7 +38,6 @@ export default function ExamCard({ exam, isCompleted = false, status = 'active',
   const navigate = useNavigate();
 
   const isDisabled = status === 'expired' || status === 'upcoming';
-  const accent = getAccent(examId);
 
   const { data: codingQuestions } = useGetCodingQuestionsQuery(examId);
 
@@ -72,51 +69,61 @@ export default function ExamCard({ exam, isCompleted = false, status = 'active',
       sx={{
         backgroundColor: '#fff',
         borderRadius: '16px',
-        border: '1px solid',
-        borderColor: isDisabled ? '#f0f0f0' : '#e8eaf0',
+        border: '1px solid #e8eaf0',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         cursor: isTeacher || isDisabled ? 'default' : 'pointer',
         opacity: isDisabled ? 0.72 : 1,
         transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         '&:hover': {
-          boxShadow: isTeacher || isDisabled ? '0 1px 4px rgba(0,0,0,0.05)' : '0 8px 24px rgba(0,0,0,0.1)',
-          transform: isTeacher || isDisabled ? 'none' : 'translateY(-3px)',
+          boxShadow: isTeacher || isDisabled ? '0 2px 8px rgba(0,0,0,0.06)' : '0 10px 28px rgba(0,0,0,0.12)',
+          transform: isTeacher || isDisabled ? 'none' : 'translateY(-4px)',
         },
       }}
     >
-      {/* Accent bar */}
-      <Box sx={{ height: 4, backgroundColor: isDisabled ? '#e0e0e0' : accent }} />
+      {/* ── Image header — cropped, no overlap ── */}
+      <Box
+        sx={{
+          height: 130,
+          backgroundImage: 'url(/card.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+          backgroundColor: PRIMARY,
+          position: 'relative',
+          filter: isDisabled ? 'grayscale(60%) brightness(0.85)' : 'none',
+        }}
+      >
+        {/* Overlay for readability */}
+        <Box sx={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,30,60,0.35)' }} />
 
-      {/* Body */}
-      <Box sx={{ p: { xs: 2, md: 2.5 }, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-        {/* Header row */}
-        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" mb={1.5}>
-          {/* Number badge */}
+        {/* Top row: number + status */}
+        <Stack direction="row" alignItems="center" justifyContent="space-between"
+          sx={{ position: 'absolute', top: 12, left: 14, right: 14 }}>
           <Box sx={{
-            width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
-            backgroundColor: isDisabled ? '#f3f4f6' : `${accent}18`,
+            width: 32, height: 32, borderRadius: '8px',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            border: '1.5px solid rgba(255,255,255,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Typography sx={{ fontWeight: 800, color: isDisabled ? '#9ca3af' : accent, fontSize: '0.9rem' }}>
-              {serialNumber}
-            </Typography>
+            <Typography sx={{ fontWeight: 800, color: '#fff', fontSize: '0.85rem' }}>{serialNumber}</Typography>
           </Box>
-
           <StatusBadge status={isCompleted ? 'active' : status} />
         </Stack>
+      </Box>
 
+      {/* ── Content below image ── */}
+      <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', flexGrow: 1, backgroundColor: '#fff' }}>
         {/* Title */}
         <Typography
-          variant="h6"
+          variant="subtitle1"
           sx={{
             fontWeight: 700,
-            color: isDisabled || isCompleted ? '#6B7280' : '#0F2242',
-            fontSize: '1rem',
+            color: isDisabled ? '#6B7280' : PRIMARY,
+            fontSize: '0.95rem',
             lineHeight: 1.35,
-            mb: 0.75,
+            mb: 1,
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
@@ -127,16 +134,16 @@ export default function ExamCard({ exam, isCompleted = false, status = 'active',
         </Typography>
 
         {/* Meta */}
-        <Stack direction="row" spacing={2.5} mb={2.5}>
-          <Stack direction="row" alignItems="center" spacing={0.6}>
-            <QuizIcon sx={{ fontSize: 15, color: '#9ca3af' }} />
-            <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, fontSize: '0.75rem' }}>
-              {actualQuestionCount} Qs
+        <Stack direction="row" spacing={2} mb={2}>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <QuizIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
+            <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, fontSize: '0.72rem' }}>
+              {actualQuestionCount} Questions
             </Typography>
           </Stack>
-          <Stack direction="row" alignItems="center" spacing={0.6}>
-            <AccessTimeIcon sx={{ fontSize: 15, color: '#9ca3af' }} />
-            <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, fontSize: '0.75rem' }}>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <AccessTimeIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
+            <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, fontSize: '0.72rem' }}>
               {duration} min
             </Typography>
           </Stack>
@@ -146,31 +153,33 @@ export default function ExamCard({ exam, isCompleted = false, status = 'active',
         <Box sx={{ mt: 'auto' }}>
           {isTeacher ? (
             <Stack direction="row" spacing={1}>
-              <Button size="small" startIcon={<EditIcon />} onClick={(e) => { e.stopPropagation(); localStorage.removeItem(`examDraft_${examId}`); localStorage.setItem('selectedExamId', examId); navigate(`/add-questions?examId=${examId}`); }}
-                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', color: '#003974', px: 1.5, borderRadius: '8px', '&:hover': { backgroundColor: '#EEF3FB' } }}>
+              <Button size="small" startIcon={<EditIcon />}
+                onClick={(e) => { e.stopPropagation(); localStorage.removeItem(`examDraft_${examId}`); localStorage.setItem('selectedExamId', examId); navigate(`/add-questions?examId=${examId}`); }}
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem', color: PRIMARY, px: 1.5, borderRadius: '8px', '&:hover': { backgroundColor: '#EEF3FB' } }}>
                 Edit
               </Button>
               <Button size="small" startIcon={<DeleteIcon />} disabled={isDeleting} onClick={handleDelete}
-                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', color: '#dc2626', px: 1.5, borderRadius: '8px', '&:hover': { backgroundColor: '#fee2e2' } }}>
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem', color: '#dc2626', px: 1.5, borderRadius: '8px', '&:hover': { backgroundColor: '#fee2e2' } }}>
                 {isDeleting ? 'Deleting…' : 'Delete'}
               </Button>
             </Stack>
           ) : status === 'upcoming' ? (
-            <Typography variant="caption" sx={{ color: '#d97706', fontWeight: 600, fontSize: '0.78rem' }}>
-              Available {new Date(exam.liveDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+            <Typography variant="caption" sx={{ color: '#d97706', fontWeight: 600, fontSize: '0.75rem' }}>
+              Available {new Date(exam.liveDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </Typography>
           ) : status === 'expired' ? (
-            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.78rem' }}>
+            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.75rem' }}>
               Exam ended
             </Typography>
           ) : isCompleted ? (
-            <Button size="small" startIcon={<BarChartIcon />} onClick={(e) => { e.stopPropagation(); navigate(`/exam-analytics/${examId}`); }}
-              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem', color: '#6366f1', px: 0, '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' } }}>
+            <Button size="small" startIcon={<BarChartIcon />}
+              onClick={(e) => { e.stopPropagation(); navigate(`/exam-analytics/${examId}`); }}
+              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.78rem', color: PRIMARY, px: 0, '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' } }}>
               View Results
             </Button>
           ) : (
             <Button size="small" variant="contained" startIcon={<PlayArrowIcon />}
-              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem', backgroundColor: accent, borderRadius: '8px', px: 2, boxShadow: 'none', '&:hover': { boxShadow: 'none', filter: 'brightness(0.92)' } }}>
+              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.78rem', backgroundColor: PRIMARY, borderRadius: '8px', px: 2, boxShadow: 'none', '&:hover': { backgroundColor: '#002a54', boxShadow: 'none' } }}>
               Start Test
             </Button>
           )}

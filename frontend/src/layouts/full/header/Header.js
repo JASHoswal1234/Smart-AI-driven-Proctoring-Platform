@@ -73,8 +73,8 @@ const Header = (props) => {
         </IconButton>
         <Box flexGrow={1} />
         <Stack spacing={1} direction="row" alignItems="center">
-          <Typography variant="contained" sx={{ color: '#FFFFFF', fontWeight: 500 }}>
-            Hello, {_.startCase(userInfo.name)}
+          <Typography variant="body2" sx={{ color: '#FFFFFF', fontWeight: 600 }}>
+            {_.startCase(userInfo.name)}
           </Typography>
           <Profile />
         </Stack>
