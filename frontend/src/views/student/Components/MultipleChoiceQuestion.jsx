@@ -218,6 +218,24 @@ export default function MultipleChoiceQuestion({
         >
           {q.question}
         </Typography>
+
+        {/* Question image — only renders if present, zero perf cost otherwise */}
+        {q.imageUrl && (
+          <Box sx={{ mt: 1.5 }}>
+            <img
+              src={q.imageUrl}
+              alt="Question illustration"
+              style={{
+                maxWidth: '100%',
+                maxHeight: 280,
+                borderRadius: 10,
+                border: '1px solid #e8eaf0',
+                display: 'block',
+              }}
+              loading="lazy"
+            />
+          </Box>
+        )}
       </Box>
 
       {/* ── Answer area ─────────────────────────────────────────────── */}

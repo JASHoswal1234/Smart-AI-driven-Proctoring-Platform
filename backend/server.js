@@ -12,7 +12,7 @@ import codingQuestionRoutes from "./routes/codingQuestionRoutes.js";
 import { exec } from "child_process";
 import { writeFileSync } from "fs";
 import cors from "cors";
-import { uploadScreenshot } from "./utils/cloudinaryUpload.js";
+import { uploadScreenshot, uploadQuestionImage } from "./utils/cloudinaryUpload.js";
 console.log("MONGO URI =", process.env.MONGO_URI);
 connectDB();
 const app = express();
@@ -115,6 +115,21 @@ app.post("/api/upload/screenshot", async (req, res) => {
     res.json({ secure_url: url });
   } catch (err) {
     console.error("Screenshot upload error:", err.message);
+    res.status(500).json({ message: "Upload failed" });
+  }
+});
+
+// Question image upload route
+app.post("/api/upload/question-image", async (req, res) => {
+  try {
+    const { dataUrl, examId } = req.body;
+    if (!dataUrl || !examId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const url = await uploadQuestionImage(dataUrl, examId);
+    res.json({ secure_url: url });
+  } catch (err) {
+    console.error("Question image upload error:", err.message);
     res.status(500).json({ message: "Upload failed" });
   }
 });

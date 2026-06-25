@@ -9,18 +9,29 @@ export const uploadScreenshot = async (dataUrl, examId, type) => {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
-  console.log('☁️ Cloudinary config:', {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY ? '✅ set' : '❌ missing',
-    api_secret: process.env.CLOUDINARY_API_SECRET ? '✅ set' : '❌ missing',
-  });
-
   const result = await cloudinary.uploader.upload(dataUrl, {
     folder: `proctoring/${examId}`,
     public_id: `${type}_${Date.now()}`,
     resource_type: 'image',
   });
 
-  console.log('✅ Screenshot uploaded:', result.secure_url);
+  return result.secure_url;
+};
+
+// Upload a question image to a dedicated folder
+export const uploadQuestionImage = async (dataUrl, examId) => {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+
+  const result = await cloudinary.uploader.upload(dataUrl, {
+    folder: `question-images/${examId}`,
+    public_id: `qimg_${Date.now()}`,
+    resource_type: 'image',
+    transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+  });
+
   return result.secure_url;
 };

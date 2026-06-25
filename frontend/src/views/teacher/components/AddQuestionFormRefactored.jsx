@@ -78,12 +78,53 @@ const AddQuestionFormRefactored = () => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [loadedFromDB, setLoadedFromDB] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  const [questionImageUploading, setQuestionImageUploading] = useState(false);
 
   // Track which examId the currently loaded DB data belongs to
-  // This prevents stale RTK Query data from a previous exam leaking into a new one
   const loadedExamIdRef = React.useRef(null);
-  // Monotonic counter for local question IDs — avoids Date.now() collisions
+  // Monotonic counter for local question IDs
   const questionIdCounter = React.useRef(Date.now());
+
+  // ── Image upload handler ──────────────────────────────────────────────────
+  const handleQuestionImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
+
+    setQuestionImageUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+          const res = await fetch(`${backendUrl}/api/upload/question-image`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ dataUrl: evt.target.result, examId: selectedExamId }),
+          });
+          const data = await res.json();
+          if (data.secure_url) {
+            setCurrentQuestion((prev) => ({ ...prev, imageUrl: data.secure_url }));
+            toast.success('Image uploaded');
+          } else {
+            toast.error('Image upload failed');
+          }
+        } catch (err) {
+          toast.error('Image upload failed');
+        } finally {
+          setQuestionImageUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error('Failed to read image');
+      setQuestionImageUploading(false);
+    }
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  };
 
   // Fetch existing questions from database
   const { data: dbQuestions, refetch: refetchQuestions } = useGetQuestionsQuery(selectedExamId, {
@@ -563,6 +604,7 @@ const AddQuestionFormRefactored = () => {
         { optionText: '', isCorrect: false },
       ],
       modelAnswer: '',
+      imageUrl: null,
     });
     setSelectedQuestionId(null);
     setValidationErrors({});
@@ -608,6 +650,7 @@ const AddQuestionFormRefactored = () => {
           questionType: q.questionType,
           ansmarks: q.ansmarks,
           sequenceNo: index,
+          imageUrl: q.imageUrl || null,
         };
 
         if (q.questionType === 'mcq') {
@@ -1270,6 +1313,56 @@ const AddQuestionFormRefactored = () => {
                     fullWidth
                     required
                   />
+
+                  {/* ── Optional question image ── */}
+                  <Box>
+                    <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ mb: 0.75, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>
+                      Question Image (optional)
+                    </Typography>
+                    {currentQuestion.imageUrl ? (
+                      <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                        <img
+                          src={currentQuestion.imageUrl}
+                          alt="Question"
+                          style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, border: '1px solid #e0e0e0', display: 'block' }}
+                        />
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          onClick={() => setCurrentQuestion((prev) => ({ ...prev, imageUrl: null }))}
+                          sx={{ mt: 1, borderRadius: '6px', fontSize: '0.75rem' }}
+                        >
+                          Remove Image
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Box>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id="question-image-upload"
+                          style={{ display: 'none' }}
+                          onChange={handleQuestionImageUpload}
+                        />
+                        <label htmlFor="question-image-upload">
+                          <Button
+                            component="span"
+                            variant="outlined"
+                            size="small"
+                            disabled={questionImageUploading || !selectedExamId}
+                            startIcon={questionImageUploading ? <span style={{ fontSize: 14 }}>⏳</span> : <UploadFileIcon fontSize="small" />}
+                            sx={{ borderRadius: '8px', borderColor: '#003974', color: '#003974', fontSize: '0.8rem', '&:hover': { backgroundColor: '#f0f4ff' } }}
+                          >
+                            {questionImageUploading ? 'Uploading...' : 'Upload Image'}
+                          </Button>
+                        </label>
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1.5 }}>
+                          JPG, PNG, GIF · Max 5MB
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
 
                   {currentQuestion.questionType === 'mcq' && (
                     <Box>
