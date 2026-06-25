@@ -525,7 +525,14 @@ const TestPage = () => {
                 {/* Webcam */}
                 <Grid item xs={12}>
                   <BlankCard>
-                    <Box sx={{ width: '100%', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#000', borderRadius: '8px' }}>
+                    <Box sx={{
+                      width: '200px',
+                      height: '200px',
+                      mx: 'auto',
+                      overflow: 'hidden',
+                      backgroundColor: '#000',
+                      borderRadius: '10px',
+                    }}>
                       <WebCam cheatingLog={cheatingLog} updateCheatingLog={updateCheatingLog} />
                     </Box>
                   </BlankCard>

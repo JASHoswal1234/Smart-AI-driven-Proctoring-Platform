@@ -244,13 +244,13 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
   }
 
   return (
-    <Box>
-      <Card sx={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden' }}>
+    <Box sx={{ width: '100%', height: '100%' }}>
+      <Card sx={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
         <Webcam
           ref={webcamRef}
           audio={false}
           muted
-          videoConstraints={{ width: 640, height: 480, facingMode: 'user' }}
+          videoConstraints={{ width: 480, height: 480, facingMode: 'user' }}
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
         <canvas
