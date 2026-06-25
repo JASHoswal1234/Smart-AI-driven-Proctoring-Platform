@@ -12,6 +12,8 @@ import CodingQuestion from "./../models/codingQuestionModel.js";
 const getExams = asyncHandler(async (req, res) => {
   const exams = await Exam.find();
   const now = new Date();
+  // Add 2-minute grace so exams set to "start now" are immediately active
+  const nowWithGrace = new Date(now.getTime() + 2 * 60 * 1000);
   
   console.log(`Total exams in DB: ${exams.length}`);
   console.log(`Current time: ${now}`);
@@ -35,11 +37,12 @@ const getExams = asyncHandler(async (req, res) => {
       return deptMatch && classMatch;
     }).map(exam => {
       // Add status to each exam
+      // Use nowWithGrace so exams set to "start now" aren't shown as upcoming
       const liveDate = new Date(exam.liveDate);
       const deadDate = new Date(exam.deadDate);
       
       let status = 'active';
-      if (now < liveDate) {
+      if (nowWithGrace < liveDate) {
         status = 'upcoming';
       } else if (now > deadDate) {
         status = 'expired';
@@ -60,7 +63,7 @@ const getExams = asyncHandler(async (req, res) => {
       const deadDate = new Date(exam.deadDate);
       
       let status = 'active';
-      if (now < liveDate) {
+      if (nowWithGrace < liveDate) {
         status = 'upcoming';
       } else if (now > deadDate) {
         status = 'expired';

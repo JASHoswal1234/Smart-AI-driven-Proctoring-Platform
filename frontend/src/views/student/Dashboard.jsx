@@ -23,17 +23,27 @@ const Dashboard = () => {
     userResults?.data?.map((result) => result.examId) || []
   );
 
+  // Categorize exams by status — recompute client-side to avoid server timezone drift
+  const now = new Date();
+  const categorizeStatus = (exam) => {
+    const liveDate = new Date(exam.liveDate);
+    const deadDate = new Date(exam.deadDate);
+    if (now < liveDate) return 'upcoming';
+    if (now > deadDate) return 'expired';
+    return 'active';
+  };
+
   // Categorize exams by status
   const activeExams = userExams?.filter(
-    (exam) => !completedExamIds.has(exam.examId) && exam.status === 'active'
+    (exam) => !completedExamIds.has(exam.examId) && categorizeStatus(exam) === 'active'
   ) || [];
   
   const upcomingExams = userExams?.filter(
-    (exam) => !completedExamIds.has(exam.examId) && exam.status === 'upcoming'
+    (exam) => !completedExamIds.has(exam.examId) && categorizeStatus(exam) === 'upcoming'
   ) || [];
   
   const expiredExams = userExams?.filter(
-    (exam) => !completedExamIds.has(exam.examId) && exam.status === 'expired'
+    (exam) => !completedExamIds.has(exam.examId) && categorizeStatus(exam) === 'expired'
   ) || [];
 
   // Fetch leaderboard data - REMOVED (students shouldn't see other students' results)

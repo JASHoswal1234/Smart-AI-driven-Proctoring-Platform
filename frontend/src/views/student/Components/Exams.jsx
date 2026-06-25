@@ -28,6 +28,16 @@ const Exams = () => {
     userResults?.data?.map((result) => result.examId) || []
   );
 
+  // Recompute status client-side to avoid server timezone drift
+  const now = new Date();
+  const getStatus = (exam) => {
+    const liveDate = new Date(exam.liveDate);
+    const deadDate = new Date(exam.deadDate);
+    if (now < liveDate) return 'upcoming';
+    if (now > deadDate) return 'expired';
+    return 'active';
+  };
+
   // Separate exams into available and completed
   const availableExams = userExams.filter((exam) => !completedExamIds.has(exam.examId));
   const completedExams = userExams.filter((exam) => completedExamIds.has(exam.examId));
@@ -60,7 +70,7 @@ const Exams = () => {
           <Grid container spacing={3}>
             {availableExams.map((exam, index) => (
               <Grid item xs={12} sm={6} md={4} key={exam._id}>
-                <ExamCard exam={exam} isCompleted={false} serialNumber={index + 1} />
+                <ExamCard exam={exam} isCompleted={false} status={getStatus(exam)} serialNumber={index + 1} />
               </Grid>
             ))}
           </Grid>
