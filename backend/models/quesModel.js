@@ -44,6 +44,10 @@ const questionSchema = mongoose.Schema(
       type: String,
       default: null,
     },
+    audioUrl: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

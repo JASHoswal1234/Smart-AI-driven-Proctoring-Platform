@@ -16,6 +16,55 @@ import { useSelector } from 'react-redux';
 // Option letter labels
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
+// ── Controlled audio player — limits playback to maxPlays ─────────────────────
+function AudioPlayer({ src, maxPlays = 2 }) {
+  const [playsLeft, setPlaysLeft] = React.useState(maxPlays);
+  const audioRef = React.useRef(null);
+
+  const handlePlay = () => {
+    if (playsLeft <= 0 && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
+
+  const handleEnded = () => {
+    setPlaysLeft((p) => Math.max(0, p - 1));
+  };
+
+  return (
+    <Box sx={{
+      mt: 1.5, p: 1.5, borderRadius: '10px', border: '1px solid',
+      backgroundColor: playsLeft === 0 ? '#fef2f2' : '#f5f3ff',
+      borderColor: playsLeft === 0 ? '#fecaca' : '#ddd6fe',
+    }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={0.75}>
+        <Typography variant="caption" fontWeight={700}
+          sx={{ color: playsLeft === 0 ? '#dc2626' : '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}>
+          🎧 Listening Audio
+        </Typography>
+        <Typography variant="caption" fontWeight={600}
+          sx={{ color: playsLeft === 0 ? '#dc2626' : '#7c3aed', fontSize: '0.7rem' }}>
+          {playsLeft === 0 ? 'No plays remaining' : `${playsLeft} play${playsLeft !== 1 ? 's' : ''} remaining`}
+        </Typography>
+      </Stack>
+      <audio
+        ref={audioRef}
+        src={src}
+        controls
+        onPlay={handlePlay}
+        onEnded={handleEnded}
+        controlsList="nodownload"
+        style={{
+          width: '100%',
+          opacity: playsLeft === 0 ? 0.4 : 1,
+          pointerEvents: playsLeft === 0 ? 'none' : 'auto',
+        }}
+      />
+    </Box>
+  );
+}
+
 // Single option tile — card style like the reference image
 function OptionTile({ label, text, selected, onClick }) {
   return (
@@ -219,7 +268,7 @@ export default function MultipleChoiceQuestion({
           {q.question}
         </Typography>
 
-        {/* Question image — only renders if present, zero perf cost otherwise */}
+        {/* Question image — only renders if present */}
         {q.imageUrl && (
           <Box sx={{ mt: 1.5 }}>
             <img
@@ -236,6 +285,9 @@ export default function MultipleChoiceQuestion({
             />
           </Box>
         )}
+
+        {/* Question audio — max 2 plays */}
+        {q.audioUrl && <AudioPlayer src={q.audioUrl} maxPlays={2} />}
       </Box>
 
       {/* ── Answer area ─────────────────────────────────────────────── */}

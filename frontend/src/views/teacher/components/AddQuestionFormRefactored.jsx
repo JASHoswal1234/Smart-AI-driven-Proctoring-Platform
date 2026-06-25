@@ -79,6 +79,7 @@ const AddQuestionFormRefactored = () => {
   const [loadedFromDB, setLoadedFromDB] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [questionImageUploading, setQuestionImageUploading] = useState(false);
+  const [questionAudioUploading, setQuestionAudioUploading] = useState(false);
 
   // Track which examId the currently loaded DB data belongs to
   const loadedExamIdRef = React.useRef(null);
@@ -123,6 +124,46 @@ const AddQuestionFormRefactored = () => {
       setQuestionImageUploading(false);
     }
     // Reset input so same file can be re-selected
+    e.target.value = '';
+  };
+
+  // ── Audio upload handler ──────────────────────────────────────────────────
+  const handleQuestionAudioUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('audio/')) { toast.error('Please select an audio file'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Audio must be under 10MB'); return; }
+
+    setQuestionAudioUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+          const res = await fetch(`${backendUrl}/api/upload/question-audio`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ dataUrl: evt.target.result, examId: selectedExamId }),
+          });
+          const data = await res.json();
+          if (data.secure_url) {
+            setCurrentQuestion((prev) => ({ ...prev, audioUrl: data.secure_url }));
+            toast.success('Audio uploaded');
+          } else {
+            toast.error('Audio upload failed');
+          }
+        } catch (err) {
+          toast.error('Audio upload failed');
+        } finally {
+          setQuestionAudioUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error('Failed to read audio file');
+      setQuestionAudioUploading(false);
+    }
     e.target.value = '';
   };
 
@@ -605,6 +646,7 @@ const AddQuestionFormRefactored = () => {
       ],
       modelAnswer: '',
       imageUrl: null,
+      audioUrl: null,
     });
     setSelectedQuestionId(null);
     setValidationErrors({});
@@ -651,6 +693,7 @@ const AddQuestionFormRefactored = () => {
           ansmarks: q.ansmarks,
           sequenceNo: index,
           imageUrl: q.imageUrl || null,
+          audioUrl: q.audioUrl || null,
         };
 
         if (q.questionType === 'mcq') {
@@ -1364,6 +1407,45 @@ const AddQuestionFormRefactored = () => {
                     )}
                   </Box>
 
+                  {/* ── Optional question audio ── */}
+                  <Box>
+                    <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ mb: 0.75, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>
+                      Question Audio (optional · max 2 plays for students)
+                    </Typography>
+                    {currentQuestion.audioUrl ? (
+                      <Box>
+                        <audio controls src={currentQuestion.audioUrl} style={{ width: '100%', marginBottom: 8 }} />
+                        <Button
+                          size="small" variant="outlined" color="error"
+                          onClick={() => setCurrentQuestion((prev) => ({ ...prev, audioUrl: null }))}
+                          sx={{ borderRadius: '6px', fontSize: '0.75rem' }}
+                        >
+                          Remove Audio
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <input
+                          type="file" accept="audio/mp3,audio/mpeg,audio/wav,audio/*"
+                          id="question-audio-upload"
+                          style={{ display: 'none' }}
+                          onChange={handleQuestionAudioUpload}
+                        />
+                        <label htmlFor="question-audio-upload">
+                          <Button
+                            component="span" variant="outlined" size="small"
+                            disabled={questionAudioUploading || !selectedExamId}
+                            startIcon={<UploadFileIcon fontSize="small" />}
+                            sx={{ borderRadius: '8px', borderColor: '#6366f1', color: '#6366f1', fontSize: '0.8rem', '&:hover': { backgroundColor: '#f5f3ff' } }}
+                          >
+                            {questionAudioUploading ? 'Uploading...' : 'Upload Audio'}
+                          </Button>
+                        </label>
+                        <Typography variant="caption" color="text.secondary">MP3, WAV · Max 10MB</Typography>
+                      </Box>
+                    )}
+                  </Box>
+
                   {currentQuestion.questionType === 'mcq' && (
                     <Box>
                       <Typography variant="subtitle2" sx={{ mb: 2 }}>
@@ -1790,6 +1872,46 @@ const AddQuestionFormRefactored = () => {
                       </Button>
                     </label>
                     <Typography variant="caption" color="text.secondary">JPG, PNG · Max 5MB</Typography>
+                  </Box>
+                )}
+              </Box>
+
+              {/* ── Optional question audio ── */}
+              <Box>
+                <Typography variant="caption" fontWeight={600} color="text.secondary"
+                  sx={{ mb: 0.75, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>
+                  Question Audio (optional · max 2 plays for students)
+                </Typography>
+                {currentQuestion.audioUrl ? (
+                  <Box>
+                    <audio controls src={currentQuestion.audioUrl} style={{ width: '100%', marginBottom: 8 }} />
+                    <Button
+                      size="small" variant="outlined" color="error"
+                      onClick={() => setCurrentQuestion((prev) => ({ ...prev, audioUrl: null }))}
+                      sx={{ borderRadius: '6px', fontSize: '0.75rem' }}
+                    >
+                      Remove Audio
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <input
+                      type="file" accept="audio/mp3,audio/mpeg,audio/wav,audio/*"
+                      id="question-audio-upload-b"
+                      style={{ display: 'none' }}
+                      onChange={handleQuestionAudioUpload}
+                    />
+                    <label htmlFor="question-audio-upload-b">
+                      <Button
+                        component="span" variant="outlined" size="small"
+                        disabled={questionAudioUploading || !selectedExamId}
+                        startIcon={<UploadFileIcon fontSize="small" />}
+                        sx={{ borderRadius: '8px', borderColor: '#6366f1', color: '#6366f1', fontSize: '0.8rem', '&:hover': { backgroundColor: '#f5f3ff' } }}
+                      >
+                        {questionAudioUploading ? 'Uploading...' : 'Upload Audio'}
+                      </Button>
+                    </label>
+                    <Typography variant="caption" color="text.secondary">MP3, WAV · Max 10MB</Typography>
                   </Box>
                 )}
               </Box>
