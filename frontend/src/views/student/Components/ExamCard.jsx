@@ -1,363 +1,177 @@
 import * as React from 'react';
-import { Box, Typography, Chip, IconButton, LinearProgress, Button } from '@mui/material';
+import { Box, Typography, Chip, Stack, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import QuizIcon from '@mui/icons-material/Quiz';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
+import AccessTimeIcon from '@mui/icons-material/AccessTimeOutlined';
+import QuizIcon from '@mui/icons-material/QuizOutlined';
+import DeleteIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/EditOutlined';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import BarChartIcon from '@mui/icons-material/BarChartOutlined';
 import { useDeleteExamMutation } from 'src/slices/examApiSlice';
 import { useGetCodingQuestionsQuery } from 'src/slices/codingQuestionApiSlice';
 import axiosInstance from 'src/axios';
 
-// Import background images
-import bg1 from '../../../assets/images/backgrounds/6.png'; // Blue
-import bg2 from '../../../assets/images/backgrounds/2.png';
-import bg3 from '../../../assets/images/backgrounds/3.png';
-import bg4 from '../../../assets/images/backgrounds/4.png';
-import bg5 from '../../../assets/images/backgrounds/5.png';
-import bg6 from '../../../assets/images/backgrounds/1.png'; // Purple
+// Deterministic accent color per exam
+const ACCENTS = ['#003974', '#6366f1', '#0891b2', '#16a34a', '#d97706', '#dc2626'];
+const getAccent = (examId) => ACCENTS[(examId?.charCodeAt(0) || 0) % ACCENTS.length];
 
-const backgroundImages = [bg1, bg2, bg3, bg4, bg5, bg6];
-
-// Difficulty levels
-const difficultyLevels = ['Primary', 'Intermediate', 'Advanced', 'Master', 'Ph.D'];
+const StatusBadge = ({ status }) => {
+  const map = {
+    active:   { label: 'Active',   bg: '#dcfce7', color: '#166534' },
+    upcoming: { label: 'Upcoming', bg: '#fef9c3', color: '#854d0e' },
+    expired:  { label: 'Expired',  bg: '#fee2e2', color: '#991b1b' },
+  };
+  const s = map[status] || map.active;
+  return (
+    <Chip label={s.label} size="small"
+      sx={{ backgroundColor: s.bg, color: s.color, fontWeight: 700, fontSize: '0.7rem', height: 22, borderRadius: '6px' }}
+    />
+  );
+};
 
 export default function ExamCard({ exam, isCompleted = false, status = 'active', serialNumber = 1 }) {
   const { examName, duration, totalQuestions, examId } = exam;
-  const { userInfo } = useSelector((state) => state.auth);
+  const { userInfo } = useSelector((s) => s.auth);
   const isTeacher = userInfo?.role === 'teacher';
   const [actualQuestionCount, setActualQuestionCount] = React.useState(totalQuestions);
-  const [completionPercentage] = React.useState(Math.floor(Math.random() * 30) + 70); // Mock data
   const [deleteExam, { isLoading: isDeleting }] = useDeleteExamMutation();
-
   const navigate = useNavigate();
-  
-  // Determine if card should be disabled
-  const isDisabled = status === 'expired' || status === 'upcoming';
 
-  // Fetch coding questions count
+  const isDisabled = status === 'expired' || status === 'upcoming';
+  const accent = getAccent(examId);
+
   const { data: codingQuestions } = useGetCodingQuestionsQuery(examId);
 
-  // Fetch actual question count (MCQ + Coding)
   React.useEffect(() => {
-    const fetchQuestionCount = async () => {
-      try {
-        const response = await axiosInstance.get(`/api/users/questions/exam/${examId}`);
-        const mcqQuestions = response.data;
-        const codingCount = codingQuestions?.length || 0;
-        setActualQuestionCount(mcqQuestions.length + codingCount);
-      } catch (error) {
-        console.error('Error fetching question count:', error);
-      }
-    };
-    fetchQuestionCount();
+    axiosInstance.get(`/api/users/questions/exam/${examId}`)
+      .then((res) => setActualQuestionCount(res.data.length + (codingQuestions?.length || 0)))
+      .catch(() => {});
   }, [examId, codingQuestions]);
 
   const handleCardClick = () => {
-    if (isTeacher || isDisabled) {
-      // Teachers and disabled cards shouldn't navigate
-      return;
-    }
-    if (isCompleted) {
-      navigate(`/exam-analytics/${examId}`);
-      return;
-    }
+    if (isTeacher || isDisabled) return;
+    if (isCompleted) { navigate(`/exam-analytics/${examId}`); return; }
     navigate(`/exam/${examId}`);
   };
 
-  const handleDeleteExam = async (e) => {
+  const handleDelete = async (e) => {
     e.stopPropagation();
-    
-    if (!window.confirm(`Are you sure you want to delete "${examName}"?`)) {
-      return;
-    }
-
+    if (!window.confirm(`Delete "${examName}"?`)) return;
     try {
       await deleteExam(examId).unwrap();
-      toast.success('Exam deleted successfully');
-      // Refresh the page to update the exam list
+      toast.success('Exam deleted');
       window.location.reload();
-    } catch (error) {
-      toast.error(error?.data?.message || 'Failed to delete exam');
-    }
+    } catch { toast.error('Failed to delete exam'); }
   };
-
-  // Select background image and difficulty based on exam
-  const bgIndex = examId ? examId.charCodeAt(0) % backgroundImages.length : 0;
-  const difficultyIndex = actualQuestionCount ? Math.min(Math.floor(actualQuestionCount / 10), 4) : 0;
-  const selectedBg = backgroundImages[bgIndex];
 
   return (
     <Box
+      onClick={handleCardClick}
       sx={{
-        backgroundColor: 'white',
-        borderRadius: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '16px',
+        border: '1px solid',
+        borderColor: isDisabled ? '#f0f0f0' : '#e8eaf0',
         overflow: 'hidden',
-        boxShadow: isDisabled ? '0 2px 8px rgba(0,0,0,0.04)' : '0 4px 16px rgba(0,0,0,0.06)',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        cursor: isTeacher || isDisabled ? 'default' : 'pointer',
-        height: '100%',
-        minHeight: '400px',
         display: 'flex',
         flexDirection: 'column',
-        opacity: isDisabled ? 0.7 : 1,
+        cursor: isTeacher || isDisabled ? 'default' : 'pointer',
+        opacity: isDisabled ? 0.72 : 1,
+        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
         '&:hover': {
-          transform: isTeacher || isDisabled ? 'none' : 'translateY(-8px)',
-          boxShadow: isTeacher || isDisabled ? (isDisabled ? '0 2px 8px rgba(0,0,0,0.06)' : '0 4px 12px rgba(0,0,0,0.1)') : '0 16px 32px rgba(0,0,0,0.18)',
+          boxShadow: isTeacher || isDisabled ? '0 1px 4px rgba(0,0,0,0.05)' : '0 8px 24px rgba(0,0,0,0.1)',
+          transform: isTeacher || isDisabled ? 'none' : 'translateY(-3px)',
         },
       }}
-      onClick={handleCardClick}
     >
-      {/* Background Image Header */}
-      <Box
-        sx={{
-          height: '180px',
-          backgroundImage: 'url(/card.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          position: 'relative',
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'flex-start',
-          p: 2,
-          filter: isCompleted || isDisabled ? 'grayscale(100%)' : 'none',
-          opacity: isCompleted || isDisabled ? 0.8 : 1,
-        }}
-      >
-        {/* Status Badge for upcoming/expired */}
-        {status === 'upcoming' && (
-          <Chip
-            label="Upcoming"
-            size="small"
-            sx={{
-              position: 'absolute',
-              top: 16,
-              left: 16,
-              backgroundColor: '#FEF3C7',
-              color: '#92400E',
-              fontWeight: 700,
-              fontSize: '13px',
-              boxShadow: '0 3px 10px rgba(0,0,0,0.15)',
-            }}
-          />
-        )}
-        {status === 'expired' && (
-          <Chip
-            label="Expired"
-            size="small"
-            sx={{
-              position: 'absolute',
-              top: 16,
-              left: 16,
-              backgroundColor: '#FEE2E2',
-              color: '#991B1B',
-              fontWeight: 700,
-              fontSize: '13px',
-              boxShadow: '0 3px 10px rgba(0,0,0,0.15)',
-            }}
-          />
-        )}
-        
-        {/* Only show serial number */}
-        <Box
-          sx={{
-            backgroundColor: '#FFFFFF',
-            color: '#003974',
-            fontWeight: 700,
-            fontSize: '18px',
-            width: '48px',
-            height: '48px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            position: 'absolute',
-            top: 16,
-            right: 16,
-          }}
-        >
-          {serialNumber}
-        </Box>
-      </Box>
+      {/* Accent bar */}
+      <Box sx={{ height: 4, backgroundColor: isDisabled ? '#e0e0e0' : accent }} />
 
-      {/* Card Content */}
-      <Box sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Exam Title */}
+      {/* Body */}
+      <Box sx={{ p: { xs: 2, md: 2.5 }, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+        {/* Header row */}
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" mb={1.5}>
+          {/* Number badge */}
+          <Box sx={{
+            width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
+            backgroundColor: isDisabled ? '#f3f4f6' : `${accent}18`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Typography sx={{ fontWeight: 800, color: isDisabled ? '#9ca3af' : accent, fontSize: '0.9rem' }}>
+              {serialNumber}
+            </Typography>
+          </Box>
+
+          <StatusBadge status={isCompleted ? 'active' : status} />
+        </Stack>
+
+        {/* Title */}
         <Typography
           variant="h6"
           sx={{
             fontWeight: 700,
-            color: isCompleted ? '#6B7280' : '#003974',
-            mb: 1.5,
-            fontSize: '20px',
-            lineHeight: 1.3,
+            color: isDisabled || isCompleted ? '#6B7280' : '#0F2242',
+            fontSize: '1rem',
+            lineHeight: 1.35,
+            mb: 0.75,
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            minHeight: '52px',
-            letterSpacing: '-0.2px'
           }}
         >
           {examName}
         </Typography>
 
-        {/* Description */}
-        <Typography
-          variant="body2"
-          sx={{
-            color: '#6B7280',
-            fontSize: '14px',
-            mb: 2.5,
-            fontWeight: 400,
-          }}
-        >
-          Multiple choice questions exam
-        </Typography>
-
-        {/* Metadata Row */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 3,
-            mb: 2,
-            color: '#6B7280',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <QuizIcon sx={{ fontSize: '20px' }} />
-            <Typography variant="body2" sx={{ fontSize: '14px', fontWeight: 600 }}>
-              {actualQuestionCount} Questions
+        {/* Meta */}
+        <Stack direction="row" spacing={2.5} mb={2.5}>
+          <Stack direction="row" alignItems="center" spacing={0.6}>
+            <QuizIcon sx={{ fontSize: 15, color: '#9ca3af' }} />
+            <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, fontSize: '0.75rem' }}>
+              {actualQuestionCount} Qs
             </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AccessTimeIcon sx={{ fontSize: '20px' }} />
-            <Typography variant="body2" sx={{ fontSize: '14px', fontWeight: 600 }}>
-              {duration} Minutes
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={0.6}>
+            <AccessTimeIcon sx={{ fontSize: 15, color: '#9ca3af' }} />
+            <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 600, fontSize: '0.75rem' }}>
+              {duration} min
             </Typography>
-          </Box>
-        </Box>
+          </Stack>
+        </Stack>
 
-        {/* Status Section */}
+        {/* CTA */}
         <Box sx={{ mt: 'auto' }}>
           {isTeacher ? (
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                fullWidth={false}
-                startIcon={<EditIcon />}
-                sx={{
-                  color: '#003974',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  p: 0,
-                  justifyContent: 'flex-start',
-                  minWidth: 'auto',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 57, 116, 0.08)',
-                    color: '#003974',
-                  },
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Clear localStorage for the selected exam
-                  localStorage.removeItem(`examDraft_${examId}`);
-                  localStorage.setItem('selectedExamId', examId);
-                  navigate(`/add-questions?examId=${examId}`);
-                }}
-              >
-                Edit Exam
+            <Stack direction="row" spacing={1}>
+              <Button size="small" startIcon={<EditIcon />} onClick={(e) => { e.stopPropagation(); localStorage.removeItem(`examDraft_${examId}`); localStorage.setItem('selectedExamId', examId); navigate(`/add-questions?examId=${examId}`); }}
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', color: '#003974', px: 1.5, borderRadius: '8px', '&:hover': { backgroundColor: '#EEF3FB' } }}>
+                Edit
               </Button>
-              <Button
-                fullWidth={false}
-                startIcon={<DeleteIcon />}
-                disabled={isDeleting}
-                sx={{
-                  color: '#ED1C24',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  p: 0,
-                  justifyContent: 'flex-start',
-                  minWidth: 'auto',
-                  '&:hover': {
-                    backgroundColor: 'rgba(237, 28, 36, 0.08)',
-                    color: '#ED1C24',
-                  },
-                  '&:disabled': {
-                    color: '#9CA3AF',
-                  },
-                }}
-                onClick={handleDeleteExam}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+              <Button size="small" startIcon={<DeleteIcon />} disabled={isDeleting} onClick={handleDelete}
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', color: '#dc2626', px: 1.5, borderRadius: '8px', '&:hover': { backgroundColor: '#fee2e2' } }}>
+                {isDeleting ? 'Deleting…' : 'Delete'}
               </Button>
-            </Box>
+            </Stack>
           ) : status === 'upcoming' ? (
-            <Typography
-              sx={{
-                color: '#92400E',
-                fontSize: '14px',
-                fontWeight: 600,
-              }}
-            >
-              Available on {new Date(exam.liveDate).toLocaleDateString()}
+            <Typography variant="caption" sx={{ color: '#d97706', fontWeight: 600, fontSize: '0.78rem' }}>
+              Available {new Date(exam.liveDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
             </Typography>
           ) : status === 'expired' ? (
-            <Typography
-              sx={{
-                color: '#991B1B',
-                fontSize: '14px',
-                fontWeight: 600,
-              }}
-            >
+            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.78rem' }}>
               Exam ended
             </Typography>
           ) : isCompleted ? (
-            <Button
-              size="small"
-              sx={{
-                color: '#003974',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '14px',
-                p: 0,
-                minWidth: 'auto',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  textDecoration: 'underline',
-                },
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/exam-analytics/${examId}`);
-              }}
-            >
-              View Analytics →
+            <Button size="small" startIcon={<BarChartIcon />} onClick={(e) => { e.stopPropagation(); navigate(`/exam-analytics/${examId}`); }}
+              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem', color: '#6366f1', px: 0, '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' } }}>
+              View Results
             </Button>
           ) : (
-            <Button
-              fullWidth={false}
-              sx={{
-                color: '#003974',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '14px',
-                p: 0,
-                justifyContent: 'flex-start',
-                minWidth: 'auto',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  textDecoration: 'underline',
-                },
-              }}
-            >
-              Start Test →
+            <Button size="small" variant="contained" startIcon={<PlayArrowIcon />}
+              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem', backgroundColor: accent, borderRadius: '8px', px: 2, boxShadow: 'none', '&:hover': { boxShadow: 'none', filter: 'brightness(0.92)' } }}>
+              Start Test
             </Button>
           )}
         </Box>
