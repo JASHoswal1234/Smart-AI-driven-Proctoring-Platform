@@ -24,12 +24,15 @@ const Dashboard = () => {
   );
 
   // Categorize exams by status — recompute client-side to avoid server timezone drift
+  // Normalize to date boundaries so "June 25" means active all day on June 25
   const now = new Date();
   const categorizeStatus = (exam) => {
     const liveDate = new Date(exam.liveDate);
     const deadDate = new Date(exam.deadDate);
-    if (now < liveDate) return 'upcoming';
-    if (now > deadDate) return 'expired';
+    const liveDayStart = new Date(liveDate.getFullYear(), liveDate.getMonth(), liveDate.getDate(), 0, 0, 0, 0);
+    const deadDayEnd = new Date(deadDate.getFullYear(), deadDate.getMonth(), deadDate.getDate(), 23, 59, 59, 999);
+    if (now < liveDayStart) return 'upcoming';
+    if (now > deadDayEnd) return 'expired';
     return 'active';
   };
 

@@ -42,7 +42,26 @@ const CreateExamPage = () => {
 
   const handleSubmit = async (values) => {
     try {
-      const examResponse = await createExam(values).unwrap();
+      // Normalize dates: liveDate starts at 00:00:00 local time, deadDate ends at 23:59:59 local time
+      // This ensures "June 25" means the exam is available ALL of June 25 regardless of timezone
+      const normalizeStart = (dateStr) => {
+        const d = new Date(dateStr);
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString();
+      };
+      const normalizeEnd = (dateStr) => {
+        const d = new Date(dateStr);
+        d.setHours(23, 59, 59, 999);
+        return d.toISOString();
+      };
+
+      const payload = {
+        ...values,
+        liveDate: normalizeStart(values.liveDate),
+        deadDate: normalizeEnd(values.deadDate),
+      };
+
+      const examResponse = await createExam(payload).unwrap();
       console.log('Exam Response:', examResponse);
 
       if (examResponse) {
