@@ -99,7 +99,7 @@ const TestPage = () => {
 
       swal(
         'Navigation Blocked!',
-        `Pressing back during the exam is not allowed.\nViolation ${newCount}/5 recorded.`,
+        `Pressing back during the exam is not allowed.\nViolation ${newCount}/10 recorded.`,
         'warning',
       );
     };
@@ -216,7 +216,7 @@ const TestPage = () => {
 
   // Tab/focus/fullscreen violations
   useEffect(() => {
-    const guard = () => terminatedRef.current || (cheatingLog.totalViolations || 0) >= 5;
+    const guard = () => terminatedRef.current || (cheatingLog.totalViolations || 0) >= 10;
     const bump = (title, msg) => {
       if (guard()) return;
       const now = Date.now();
@@ -240,7 +240,7 @@ const TestPage = () => {
   }, [cheatingLog, updateCheatingLog, lastTabSwitchTime]);
 
   useEffect(() => {
-    if ((cheatingLog.totalViolations || 0) >= 5 && !terminatedRef.current && !shouldTerminate) {
+    if ((cheatingLog.totalViolations || 0) >= 10 && !terminatedRef.current && !shouldTerminate) {
       setShouldTerminate(true);
     }
   }, [cheatingLog.totalViolations]);
@@ -250,14 +250,14 @@ const TestPage = () => {
     terminatedRef.current = true;
 
     // Navigate immediately after user clicks OK — saves happen in background
-    swal({ title: 'Exam Terminated!', text: 'You have reached 5 violations. Your exam has been submitted.', icon: 'error', button: 'OK', closeOnClickOutside: false, closeOnEsc: false })
+    swal({ title: 'Exam Terminated!', text: 'You have reached 10 violations. Your exam has been submitted.', icon: 'error', button: 'OK', closeOnClickOutside: false, closeOnEsc: false })
       .then(() => navigate('/dashboard'));
 
     // Background saves — don't block navigation
     const answers = Object.keys(answersRef.current).length > 0 ? answersRef.current : { terminated: 'terminated' };
     axiosInstance.post('/api/users/results', { examId, answers, subjectiveAnswers: {} }, { withCredentials: true })
       .catch((err) => { if (err?.response?.status !== 400) console.error(err); });
-    saveCheatingLogMutation({ ...cheatingLog, username: userInfo?.name, email: userInfo?.email, examId, totalViolations: cheatingLog.totalViolations || 5 })
+    saveCheatingLogMutation({ ...cheatingLog, username: userInfo?.name, email: userInfo?.email, examId, totalViolations: cheatingLog.totalViolations || 10 })
       .catch((err) => console.error(err));
   }, [shouldTerminate]);
 

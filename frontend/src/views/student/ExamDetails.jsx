@@ -73,7 +73,7 @@ const DescriptionAndInstructions = () => {
     `${mcqCount > 0 ? `${mcqCount} MCQ` : ''}${mcqCount > 0 && subjectiveCount > 0 ? ' + ' : ''}${subjectiveCount > 0 ? `${subjectiveCount} Subjective` : ''}${hasCodingQuestions ? ' + Coding questions' : ''} — answer all to the best of your ability.`,
     'Your webcam will monitor you throughout the exam.',
     'Do not switch tabs or minimize the window — violations are recorded.',
-    'Each violation counts toward termination (max 5).',
+    'Each violation counts toward termination (max 10).',
     'Screenshots may be taken automatically on violation.',
     'Use Next to advance. Submit Test when done.',
     'Results will be available after submission.',

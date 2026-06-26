@@ -10,8 +10,8 @@ import '@tensorflow/tfjs-backend-webgl';
 
 // Cooldown per violation type in ms
 const COOLDOWN_MS = 8000;
-// Frames looking away before triggering (2 frames = ~2 seconds)
-const AWAY_FRAME_THRESHOLD = 2;
+// Frames looking away before triggering (4 frames = ~4 seconds)
+const AWAY_FRAME_THRESHOLD = 4;
 // Consecutive frames needed to confirm no-face (reduces false positives)
 const NO_FACE_CONFIRMATION_FRAMES = 2;
 // Multiple faces needs MORE frames - strictest check (must see 2+ faces for 3 consecutive frames)
@@ -81,9 +81,9 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
 
   // ================= HANDLE VIOLATION =================
   const handleViolation = useCallback(async (type, label) => {
-    // CRITICAL: Stop detecting violations at 5
-    if (totalViolationsRef.current >= 5) {
-      console.log('[WebCam] 🛑 Already at 5 violations, ignoring new detections');
+    // CRITICAL: Stop detecting violations at 10
+    if (totalViolationsRef.current >= 10) {
+      console.log('[WebCam] 🛑 Already at 10 violations, ignoring new detections');
       return;
     }
 
@@ -114,11 +114,11 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
       return updated;
     });
 
-    // Don't show swal at 5 - TestPage will handle termination
-    if (newTotal < 5) {
-      swal('⚠️ Violation Detected', `${label}\nViolation ${newTotal}/5`, 'warning');
+    // Don't show swal at 10 - TestPage will handle termination
+    if (newTotal < 10) {
+      swal('⚠️ Violation Detected', `${label}\nViolation ${newTotal}/10`, 'warning');
     } else {
-      console.log('[WebCam] 🔴 Reached 5 violations - TestPage will terminate');
+      console.log('[WebCam] 🔴 Reached 10 violations - TestPage will terminate');
     }
   }, [captureAndUpload, updateCheatingLog]);
 
@@ -146,8 +146,8 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
     });
 
     faceMesh.onResults((results) => {
-      // Stop processing if 5+ violations
-      if (totalViolationsRef.current >= 5) return;
+      // Stop processing if 10+ violations
+      if (totalViolationsRef.current >= 10) return;
 
       // No face detected
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
@@ -220,8 +220,8 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
       const net = await cocossd.load();
 
       intervalId = setInterval(async () => {
-        // Stop processing if 5+ violations
-        if (totalViolationsRef.current >= 5) return;
+        // Stop processing if 10+ violations
+        if (totalViolationsRef.current >= 10) return;
 
         const video = webcamRef.current?.video;
         if (!video || video.readyState !== 4) return;
@@ -328,14 +328,14 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
             top: 8,
             left: 8,
             zIndex: 20,
-            backgroundColor: totalViolations >= 4 ? 'rgba(220,38,38,0.85)' : 'rgba(0,0,0,0.55)',
+            backgroundColor: totalViolations >= 8 ? 'rgba(220,38,38,0.85)' : 'rgba(0,0,0,0.55)',
             borderRadius: '8px',
             px: 1.5,
             py: 0.5,
           }}
         >
           <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, fontSize: '13px' }}>
-            Violations: {totalViolations}/5
+            Violations: {totalViolations}/10
           </Typography>
         </Box>
       </Card>

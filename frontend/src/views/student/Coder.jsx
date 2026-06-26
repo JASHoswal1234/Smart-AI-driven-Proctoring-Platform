@@ -70,10 +70,10 @@ export default function Coder() {
       cheatingLog.prohibitedObjectCount + 
       cheatingLog.tabSwitchCount;
 
-    if (totalViolations >= 5) {
+    if (totalViolations >= 10) {
       swal({
         title: 'Test Terminated!',
-        text: 'You have exceeded the maximum number of violations (5). Please contact your teacher.',
+        text: 'You have exceeded the maximum number of violations (10). Please contact your teacher.',
         icon: 'error',
         button: 'OK',
         closeOnClickOutside: false,
