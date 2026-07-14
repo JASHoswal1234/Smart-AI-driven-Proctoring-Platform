@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import * as cocossd from '@tensorflow-models/coco-ssd';
 import Webcam from 'react-webcam';
-import { drawRect } from './utilities';
-import { Box, Card, Typography } from '@mui/material';
+import { drawRect, drawFaceRect } from './utilities';
+import { Box, Card, Typography, CircularProgress } from '@mui/material';
 import swal from 'sweetalert';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import '@tensorflow/tfjs-backend-webgl';
@@ -34,11 +34,15 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
   const cooldownMapRef = useRef({});
   const totalViolationsRef = useRef(0);
   const onTerminateRef = useRef(onTerminate); // always latest
+  const currentFaceLandmarksRef = useRef(null); // Store latest face landmarks
   
   // Confirmation counters for reducing false positives
   const noFaceFramesRef = useRef(0);
   const multipleFaceFramesRef = useRef(0);
   const objectDetectionRef = useRef({ cellPhone: 0, book: 0, laptop: 0 });
+  
+  // Loading state for models
+  const [modelsLoading, setModelsLoading] = useState(true);
 
   // Keep refs in sync
   useEffect(() => { onTerminateRef.current = onTerminate; }, [onTerminate]);
@@ -149,6 +153,9 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
       // Stop processing if 10+ violations
       if (totalViolationsRef.current >= 10) return;
 
+      // Store current face landmarks for drawing
+      currentFaceLandmarksRef.current = results.multiFaceLandmarks;
+
       // No face detected
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
         noFaceFramesRef.current++;
@@ -215,71 +222,90 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
     let intervalId;
 
     const run = async () => {
-      await tf.setBackend('webgl');
-      await tf.ready();
-      const net = await cocossd.load();
+      try {
+        console.log('🔄 Loading detection models...');
+        await tf.setBackend('webgl');
+        await tf.ready();
+        const net = await cocossd.load();
+        console.log('✅ Models loaded successfully');
+        setModelsLoading(false);
 
-      intervalId = setInterval(async () => {
-        // Stop processing if 10+ violations
-        if (totalViolationsRef.current >= 10) return;
+        intervalId = setInterval(async () => {
+          // Stop processing if 10+ violations
+          if (totalViolationsRef.current >= 10) return;
 
-        const video = webcamRef.current?.video;
-        if (!video || video.readyState !== 4) return;
+          const video = webcamRef.current?.video;
+          if (!video || video.readyState !== 4) return;
 
-        const canvas = canvasRef.current;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
 
-        // FaceMesh send
-        if (faceMeshRef.current && !isProcessingRef.current) {
-          isProcessingRef.current = true;
-          try {
-            await faceMeshRef.current.send({ image: video });
-          } catch (e) {
-            // suppress
-          }
-          isProcessingRef.current = false;
-        }
+          // Clear canvas before drawing
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Object detection
-        const objects = await net.detect(video);
-        drawRect(objects, canvas.getContext('2d'));
-
-        // Reset all object counters first
-        const detectedNow = { cellPhone: false, book: false, laptop: false };
-
-        objects.forEach(({ class: cls, score }) => {
-          // Cell phone: lower confidence, detects partial phones
-          if (cls === 'cell phone' && score >= CELLPHONE_CONFIDENCE_THRESHOLD) {
-            detectedNow.cellPhone = true;
-          }
-          // Books/laptops: higher confidence
-          if (cls === 'book' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
-            detectedNow.book = true;
-          }
-          if (cls === 'laptop' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
-            detectedNow.laptop = true;
-          }
-        });
-
-        // Increment counters for detected objects, reset others
-        Object.keys(detectedNow).forEach((objType) => {
-          if (detectedNow[objType]) {
-            objectDetectionRef.current[objType]++;
-            // Cell phone needs fewer frames for faster detection
-            const threshold = objType === 'cellPhone' ? CELLPHONE_CONFIRMATION_FRAMES : OBJECT_CONFIRMATION_FRAMES;
-            
-            if (objectDetectionRef.current[objType] >= threshold) {
-              objectDetectionRef.current[objType] = 0; // Reset after triggering
-              if (objType === 'cellPhone') handleViolation('cellPhone', 'Cell phone detected');
-              if (objType === 'book') handleViolation('prohibitedObject', 'Book detected');
-              if (objType === 'laptop') handleViolation('prohibitedObject', 'Laptop detected');
+          // FaceMesh send
+          if (faceMeshRef.current && !isProcessingRef.current) {
+            isProcessingRef.current = true;
+            try {
+              await faceMeshRef.current.send({ image: video });
+            } catch (e) {
+              // suppress
             }
-          } else {
-            objectDetectionRef.current[objType] = 0; // Reset if not detected
+            isProcessingRef.current = false;
           }
-        });
-      }, 1000); // run every 1s instead of 500ms
+
+          // Draw face rectangles first (from stored landmarks)
+          if (currentFaceLandmarksRef.current) {
+            drawFaceRect(currentFaceLandmarksRef.current, ctx, canvas);
+          }
+
+          // Object detection and drawing
+          const objects = await net.detect(video);
+          drawRect(objects, ctx);
+
+          // Reset all object counters first
+          const detectedNow = { cellPhone: false, book: false, laptop: false };
+
+          objects.forEach(({ class: cls, score }) => {
+            // Cell phone: lower confidence, detects partial phones
+            if (cls === 'cell phone' && score >= CELLPHONE_CONFIDENCE_THRESHOLD) {
+              detectedNow.cellPhone = true;
+            }
+            // Books/laptops: higher confidence
+            if (cls === 'book' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
+              detectedNow.book = true;
+            }
+            if (cls === 'laptop' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
+              detectedNow.laptop = true;
+            }
+          });
+
+          // Increment counters for detected objects, reset others
+          Object.keys(detectedNow).forEach((objType) => {
+            if (detectedNow[objType]) {
+              objectDetectionRef.current[objType]++;
+              // Cell phone needs fewer frames for faster detection
+              const threshold = objType === 'cellPhone' ? CELLPHONE_CONFIRMATION_FRAMES : OBJECT_CONFIRMATION_FRAMES;
+              
+              if (objectDetectionRef.current[objType] >= threshold) {
+                objectDetectionRef.current[objType] = 0; // Reset after triggering
+                if (objType === 'cellPhone') handleViolation('cellPhone', 'Cell phone detected');
+                if (objType === 'book') handleViolation('prohibitedObject', 'Book detected');
+                if (objType === 'laptop') handleViolation('prohibitedObject', 'Laptop detected');
+              }
+            } else {
+              objectDetectionRef.current[objType] = 0; // Reset if not detected
+            }
+          });
+        }, 500); // Run every 500ms for smoother visuals
+      } catch (error) {
+        console.error('❌ Error loading models:', error);
+        setModelsLoading(false);
+      }
     };
 
     run();
@@ -303,6 +329,19 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
           ref={canvasRef}
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10 }}
         />
+        {modelsLoading && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 20,
+            }}
+          >
+            <CircularProgress size={20} sx={{ color: '#fff' }} />
+          </Box>
+        )}
       </Box>
     );
   }
@@ -321,6 +360,31 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
           ref={canvasRef}
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10 }}
         />
+        {/* Loading indicator */}
+        {modelsLoading && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 25,
+              backgroundColor: 'rgba(0,0,0,0.75)',
+              borderRadius: '12px',
+              px: 3,
+              py: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 1.5,
+            }}
+          >
+            <CircularProgress size={32} sx={{ color: '#00ff00' }} />
+            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+              Loading AI Detection...
+            </Typography>
+          </Box>
+        )}
         {/* Violation counter overlay */}
         <Box
           sx={{
@@ -338,6 +402,25 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
             Violations: {totalViolations}/10
           </Typography>
         </Box>
+        {/* Detection status indicator */}
+        {!modelsLoading && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 20,
+              backgroundColor: 'rgba(0,200,0,0.75)',
+              borderRadius: '8px',
+              px: 1.5,
+              py: 0.5,
+            }}
+          >
+            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, fontSize: '11px' }}>
+              ● MONITORING
+            </Typography>
+          </Box>
+        )}
       </Card>
     </Box>
   );
