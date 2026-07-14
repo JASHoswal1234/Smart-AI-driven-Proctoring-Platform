@@ -7,7 +7,7 @@ const baseQuery = fetchBaseQuery({
 
 export const apiSlice = createApi({
   baseQuery,
-  tagTypes: ['User'],
+  tagTypes: ['User', 'CheatingLog'],
   // it like a prent to other api
   // it a build in builder
   endpoints: (builder) => ({}),

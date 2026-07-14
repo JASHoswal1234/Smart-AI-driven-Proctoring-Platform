@@ -12,6 +12,10 @@ export const cheatingLogApiSlice = apiSlice.injectEndpoints({
         url: `${CHEATING_LOGS_URL}/cheatingLogs/${examId}`,
         method: 'GET',
       }),
+      providesTags: (result, error, examId) => [
+        { type: 'CheatingLog', id: examId },
+        { type: 'CheatingLog', id: 'LIST' },
+      ],
     }),
     // Save a new cheating log entry for an exam
     saveCheatingLog: builder.mutation({
@@ -20,6 +24,10 @@ export const cheatingLogApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: (result, error, arg) => [
+        { type: 'CheatingLog', id: arg.examId },
+        { type: 'CheatingLog', id: 'LIST' },
+      ],
     }),
   }),
 });

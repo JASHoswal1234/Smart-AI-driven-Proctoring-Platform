@@ -249,16 +249,56 @@ const TestPage = () => {
     if (!shouldTerminate || terminatedRef.current) return;
     terminatedRef.current = true;
 
+    // Prepare cheating log data BEFORE showing alert
+    const updatedLog = {
+      ...cheatingLog,
+      username: userInfo?.name || 'Unknown',
+      email: userInfo?.email || 'unknown@email.com',
+      examId,
+      totalViolations: parseInt(cheatingLog.totalViolations, 10) || 10,
+      screenshots: cheatingLog.screenshots || [],
+    };
+
+    console.log('[TestPage] === EXAM TERMINATED ===');
+    console.log('[TestPage] Cheating log to save:', updatedLog);
+    console.log('[TestPage] Total violations:', updatedLog.totalViolations);
+    console.log('[TestPage] Screenshots count:', updatedLog.screenshots.length);
+
     // Navigate immediately after user clicks OK — saves happen in background
     swal({ title: 'Exam Terminated!', text: 'You have reached 10 violations. Your exam has been submitted.', icon: 'error', button: 'OK', closeOnClickOutside: false, closeOnEsc: false })
       .then(() => navigate('/dashboard'));
 
-    // Background saves — don't block navigation
-    const answers = Object.keys(answersRef.current).length > 0 ? answersRef.current : { terminated: 'terminated' };
-    axiosInstance.post('/api/users/results', { examId, answers, subjectiveAnswers: {} }, { withCredentials: true })
-      .catch((err) => { if (err?.response?.status !== 400) console.error(err); });
-    saveCheatingLogMutation({ ...cheatingLog, username: userInfo?.name, email: userInfo?.email, examId, totalViolations: cheatingLog.totalViolations || 10 })
-      .catch((err) => console.error(err));
+    // Background saves with better error handling
+    (async () => {
+      console.log('[TestPage] Starting termination save operations...');
+      
+      // Save results
+      const answers = Object.keys(answersRef.current).length > 0 ? answersRef.current : { terminated: 'terminated' };
+      try {
+        await axiosInstance.post('/api/users/results', { examId, answers, subjectiveAnswers: {} }, { withCredentials: true });
+        console.log('[TestPage] ✅ Results saved (terminated)');
+      } catch (err) {
+        if (err?.response?.status !== 400) {
+          console.error('[TestPage] ❌ Result save error (terminated):', err);
+        }
+      }
+      
+      // Save cheating log
+      try {
+        console.log('[TestPage] Calling saveCheatingLogMutation (terminated)...');
+        const logResult = await saveCheatingLogMutation(updatedLog).unwrap();
+        console.log('[TestPage] ✅ Cheating log saved (terminated):', logResult);
+      } catch (err) {
+        console.error('[TestPage] ❌ Cheating log save FAILED (terminated):', err);
+        console.error('[TestPage] Error details:', {
+          status: err?.status,
+          data: err?.data,
+          message: err?.message,
+        });
+      }
+      
+      console.log('[TestPage] === TERMINATION SAVE COMPLETE ===');
+    })();
   }, [shouldTerminate]);
 
   // Load questions
@@ -290,28 +330,55 @@ const TestPage = () => {
     setIsSubmitting(true);
     const answersObject = answersRef.current || {};
 
-    // Navigate immediately — don't wait for API calls
-    toast.success('Test submitted successfully!');
-    navigate('/Success');
-
-    // Fire API calls in background after navigation
+    // Prepare cheating log data BEFORE navigation
     const updatedLog = {
       ...cheatingLog,
       username: userInfo.name,
       email: userInfo.email,
       examId,
-      totalViolations: parseInt(cheatingLog.totalViolations) || 0,
+      totalViolations: parseInt(cheatingLog.totalViolations, 10) || 0,
       screenshots: cheatingLog.screenshots || [],
     };
 
+    console.log('[TestPage] === SUBMITTING TEST ===');
+    console.log('[TestPage] Cheating log to save:', updatedLog);
+    console.log('[TestPage] Total violations:', updatedLog.totalViolations);
+    console.log('[TestPage] Screenshots count:', updatedLog.screenshots.length);
+
+    // Navigate immediately — don't wait for API calls
+    toast.success('Test submitted successfully!');
+    navigate('/Success');
+
+    // Fire API calls in background after navigation with better error handling
     (async () => {
-      try { await saveCheatingLogMutation(updatedLog).unwrap(); }
-      catch (logError) { console.error('[TestPage] cheating log error:', logError); }
+      console.log('[TestPage] Starting background save operations...');
+      
+      // Save cheating log
       try {
-        await axiosInstance.post('/api/users/results', { examId, answers: answersObject, subjectiveAnswers: {} }, { withCredentials: true });
-      } catch (resultError) {
-        if (resultError?.response?.status !== 400) console.error('[TestPage] result save error:', resultError);
+        console.log('[TestPage] Calling saveCheatingLogMutation...');
+        const logResult = await saveCheatingLogMutation(updatedLog).unwrap();
+        console.log('[TestPage] ✅ Cheating log saved successfully:', logResult);
+      } catch (logError) {
+        console.error('[TestPage] ❌ Cheating log save FAILED:', logError);
+        console.error('[TestPage] Error details:', {
+          status: logError?.status,
+          data: logError?.data,
+          message: logError?.message,
+        });
       }
+      
+      // Save results
+      try {
+        console.log('[TestPage] Saving results...');
+        await axiosInstance.post('/api/users/results', { examId, answers: answersObject, subjectiveAnswers: {} }, { withCredentials: true });
+        console.log('[TestPage] ✅ Results saved successfully');
+      } catch (resultError) {
+        if (resultError?.response?.status !== 400) {
+          console.error('[TestPage] ❌ Result save FAILED:', resultError);
+        }
+      }
+      
+      console.log('[TestPage] === BACKGROUND SAVE COMPLETE ===');
     })();
   };
 
