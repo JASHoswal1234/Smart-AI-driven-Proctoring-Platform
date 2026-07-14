@@ -34,47 +34,74 @@ const saveCheatingLog = asyncHandler(async (req, res) => {
     console.log(`🔍 Searching for existing log with examId: ${examId}, email: ${email}`);
     const existingLog = await CheatingLog.findOne({ examId, email });
 
+    // Parse totalViolations to ensure it's a number
+    const newViolationCount = parseInt(totalViolations, 10) || 0;
+    console.log("📊 Parsed violation count:", newViolationCount, "Type:", typeof newViolationCount);
+
     if (existingLog) {
-      // Update existing log - take the maximum to ensure we don't lose data
+      // Update existing log - ALWAYS use the new count (it's cumulative from frontend)
       console.log("✅ Found existing log, updating...");
       console.log("📊 Existing violations:", existingLog.totalViolations);
-      console.log("📊 New violations from request:", parseInt(totalViolations) || 0);
+      console.log("📊 New violations from request:", newViolationCount);
       
-      // Take the maximum of existing and new count
-      existingLog.totalViolations = Math.max(existingLog.totalViolations, parseInt(totalViolations) || 0);
+      // Use the new count directly (frontend sends cumulative total)
+      existingLog.totalViolations = newViolationCount;
       existingLog.username = username;
       
-      console.log("📊 Updated violations (using Math.max):", existingLog.totalViolations);
+      console.log("📊 Updated violations:", existingLog.totalViolations);
       
-      // Merge screenshots (avoid duplicates)
-      if (screenshots && screenshots.length > 0) {
+      // Merge screenshots (avoid duplicates based on URL)
+      if (screenshots && Array.isArray(screenshots) && screenshots.length > 0) {
         const existingUrls = new Set(existingLog.screenshots.map(s => s.url));
-        const newScreenshots = screenshots.filter(s => !existingUrls.has(s.url));
+        const newScreenshots = screenshots.filter(s => s && s.url && !existingUrls.has(s.url));
         console.log(`📸 Adding ${newScreenshots.length} new screenshots (${screenshots.length} received, ${existingLog.screenshots.length} already exist)`);
-        existingLog.screenshots.push(...newScreenshots);
+        
+        if (newScreenshots.length > 0) {
+          existingLog.screenshots.push(...newScreenshots);
+        }
       }
 
       const savedLog = await existingLog.save();
       console.log("✅ Successfully updated cheating log in MongoDB:", savedLog._id);
       console.log("📊 Final saved violations:", savedLog.totalViolations);
       console.log("📸 Total screenshots:", savedLog.screenshots?.length || 0);
+      
+      // Log first screenshot for debugging
+      if (savedLog.screenshots && savedLog.screenshots.length > 0) {
+        console.log("📸 Sample screenshot:", {
+          url: savedLog.screenshots[0].url,
+          type: savedLog.screenshots[0].type,
+          hasUrl: !!savedLog.screenshots[0].url
+        });
+      }
+      
       console.log("=== END CHEATING LOG SAVE ===");
       res.status(200).json(savedLog);
     } else {
       // Create new log
       console.log("⚠️ No existing log found, creating new one...");
       const cheatingLog = new CheatingLog({
-        totalViolations: parseInt(totalViolations) || 0,
+        totalViolations: newViolationCount,
         examId,
         username,
         email,
-        screenshots: screenshots || [],
+        screenshots: Array.isArray(screenshots) ? screenshots : [],
       });
 
       const savedLog = await cheatingLog.save();
       console.log("✅ Successfully saved new cheating log to MongoDB:", savedLog._id);
       console.log("📊 Initial violations:", savedLog.totalViolations);
       console.log("📸 Initial screenshots:", savedLog.screenshots?.length || 0);
+      
+      // Log first screenshot for debugging
+      if (savedLog.screenshots && savedLog.screenshots.length > 0) {
+        console.log("📸 Sample screenshot:", {
+          url: savedLog.screenshots[0].url,
+          type: savedLog.screenshots[0].type,
+          hasUrl: !!savedLog.screenshots[0].url
+        });
+      }
+      
       console.log("=== END CHEATING LOG SAVE ===");
       res.status(201).json(savedLog);
     }

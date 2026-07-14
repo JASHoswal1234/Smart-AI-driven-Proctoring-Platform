@@ -204,6 +204,15 @@ export default function CheatingTable() {
                 ) : (
                   filteredUsers.map((log, index) => {
                     const violationStyle = getViolationColor(log.totalViolations || 0);
+                    const screenshotCount = log.screenshots?.length || 0;
+                    
+                    console.log('Log entry:', { 
+                      username: log.username, 
+                      totalViolations: log.totalViolations, 
+                      violationType: typeof log.totalViolations,
+                      screenshotCount 
+                    });
+                    
                     return (
                       <TableRow 
                         key={index}
@@ -231,12 +240,12 @@ export default function CheatingTable() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Tooltip title="View Screenshots">
+                          <Tooltip title={screenshotCount > 0 ? `View ${screenshotCount} Screenshots` : 'No Screenshots'}>
                             <IconButton
                               onClick={() => handleViewScreenshots(log)}
-                              disabled={!log.screenshots?.length}
+                              disabled={screenshotCount === 0}
                               sx={{
-                                color: log.screenshots?.length ? '#003974' : '#ECECEC',
+                                color: screenshotCount > 0 ? '#003974' : '#ECECEC',
                                 '&:hover': {
                                   backgroundColor: '#F0F7FF',
                                 }
@@ -264,6 +273,8 @@ export default function CheatingTable() {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {filteredUsers.map((log, index) => {
                   const violationStyle = getViolationColor(log.totalViolations || 0);
+                  const screenshotCount = log.screenshots?.length || 0;
+                  
                   return (
                     <Card key={index} sx={{ border: '1px solid #ECECEC', borderRadius: '12px' }}>
                       <CardContent sx={{ p: 2 }}>
@@ -282,11 +293,11 @@ export default function CheatingTable() {
                           </Box>
                           <IconButton
                             onClick={() => handleViewScreenshots(log)}
-                            disabled={!log.screenshots?.length}
+                            disabled={screenshotCount === 0}
                             size="small"
                             sx={{
-                              color: log.screenshots?.length ? '#003974' : '#ECECEC',
-                              backgroundColor: log.screenshots?.length ? '#F0F7FF' : 'transparent',
+                              color: screenshotCount > 0 ? '#003974' : '#ECECEC',
+                              backgroundColor: screenshotCount > 0 ? '#F0F7FF' : 'transparent',
                             }}
                           >
                             <ImageIcon fontSize="small" />
@@ -358,33 +369,46 @@ export default function CheatingTable() {
         <DialogContent sx={{ pt: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 } }}>
           {selectedLog?.screenshots && selectedLog.screenshots.length > 0 ? (
             <Grid container spacing={2}>
-              {selectedLog.screenshots.map((screenshot, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
-                  <Card 
-                    elevation={0}
-                    sx={{ 
-                      border: '1px solid #ECECEC',
-                      borderRadius: '8px',
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={screenshot.url}
-                      alt={`Violation - ${screenshot.type}`}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                    <CardContent sx={{ p: 2 }}>
-                      <Typography variant="subtitle2" sx={{ color: '#0F2242', fontWeight: 600, fontSize: '0.875rem' }}>
-                        Type: {screenshot.type}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: '#6B7280', fontSize: '0.75rem' }}>
-                        Detected: {new Date(screenshot.detectedAt).toLocaleString()}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+              {selectedLog.screenshots.map((screenshot, index) => {
+                // Handle both URL formats: direct string or object with url property
+                const imageUrl = typeof screenshot === 'string' ? screenshot : screenshot.url;
+                const violationType = screenshot.type || 'Unknown';
+                const detectedTime = screenshot.detectedAt ? new Date(screenshot.detectedAt).toLocaleString() : 'N/A';
+                
+                console.log('Screenshot debug:', { index, imageUrl, violationType, screenshot });
+                
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Card 
+                      elevation={0}
+                      sx={{ 
+                        border: '1px solid #ECECEC',
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <CardMedia
+                        component="img"
+                        height="200"
+                        image={imageUrl}
+                        alt={`Violation - ${violationType}`}
+                        sx={{ objectFit: 'cover' }}
+                        onError={(e) => {
+                          console.error('Image failed to load:', imageUrl);
+                          e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="%23f0f0f0"/><text x="50%" y="50%" font-size="14" text-anchor="middle" fill="%23999">Image unavailable</text></svg>';
+                        }}
+                      />
+                      <CardContent sx={{ p: 2 }}>
+                        <Typography variant="subtitle2" sx={{ color: '#0F2242', fontWeight: 600, fontSize: '0.875rem' }}>
+                          Type: {violationType}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#6B7280', fontSize: '0.75rem' }}>
+                          Detected: {detectedTime}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
             </Grid>
           ) : (
             <Box sx={{ textAlign: 'center', py: 4 }}>
