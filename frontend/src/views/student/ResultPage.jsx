@@ -86,6 +86,8 @@ const ResultPage = () => {
 
   // Helper function to get violations count for a student
   const getViolationsCount = (email, examId) => {
+    if (!email) return 0;
+    
     // If a specific exam is selected, use the fetched data
     if (selectedExam !== 'all' && cheatingLogsData) {
       const log = Array.isArray(cheatingLogsData) 

@@ -14,7 +14,7 @@ const cheatingLogSchema = new mongoose.Schema(
         url: { type: String, required: true },
         type: {
           type: String,
-          enum: ["noFace", "multipleFace", "cellPhone", "prohibitedObject"],
+          enum: ["noFace", "multipleFace", "cellPhone", "prohibitedObject", "lookingAway", "suspiciousAudio"],
           required: true,
         },
         detectedAt: { type: Date, default: Date.now },
