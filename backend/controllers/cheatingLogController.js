@@ -47,11 +47,13 @@ const saveCheatingLog = asyncHandler(async (req, res) => {
       console.log("📊 Updated violations (using Math.max):", existingLog.totalViolations);
       
       // Merge screenshots (avoid duplicates)
-      if (screenshots && screenshots.length > 0) {
-        const existingUrls = new Set(existingLog.screenshots.map(s => s.url));
-        const newScreenshots = screenshots.filter(s => !existingUrls.has(s.url));
+      if (screenshots && Array.isArray(screenshots) && screenshots.length > 0) {
+        const existingUrls = new Set(existingLog.screenshots.map(s => s && s.url).filter(Boolean));
+        const newScreenshots = screenshots.filter(s => s && s.url && !existingUrls.has(s.url));
         console.log(`📸 Adding ${newScreenshots.length} new screenshots (${screenshots.length} received, ${existingLog.screenshots.length} already exist)`);
-        existingLog.screenshots.push(...newScreenshots);
+        if (newScreenshots.length > 0) {
+          existingLog.screenshots.push(...newScreenshots);
+        }
       }
 
       const savedLog = await existingLog.save();
@@ -68,7 +70,7 @@ const saveCheatingLog = asyncHandler(async (req, res) => {
         examId,
         username,
         email,
-        screenshots: screenshots || [],
+        screenshots: Array.isArray(screenshots) ? screenshots.filter(s => s && s.url) : [],
       });
 
       const savedLog = await cheatingLog.save();
