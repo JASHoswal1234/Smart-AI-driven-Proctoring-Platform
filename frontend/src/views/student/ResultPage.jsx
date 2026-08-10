@@ -40,6 +40,7 @@ import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { useGetCheatingLogsQuery } from 'src/slices/cheatingLogApiSlice';
 import {
   BarChart,
   Bar,
@@ -76,6 +77,31 @@ const ResultPage = () => {
   const [selectedExam, setSelectedExam] = useState('all');
   const [exams, setExams] = useState([]);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [allCheatingLogs, setAllCheatingLogs] = useState({});
+
+  // Fetch cheating logs for the selected exam (when a specific exam is selected)
+  const { data: cheatingLogsData } = useGetCheatingLogsQuery(selectedExam, {
+    skip: !selectedExam || selectedExam === 'all',
+  });
+
+  // Helper function to get violations count for a student
+  const getViolationsCount = (email, examId) => {
+    // If a specific exam is selected, use the fetched data
+    if (selectedExam !== 'all' && cheatingLogsData) {
+      const log = Array.isArray(cheatingLogsData) 
+        ? cheatingLogsData.find(l => l.email === email)
+        : null;
+      return log?.totalViolations || 0;
+    }
+    
+    // If viewing all exams, use the cached data for this specific exam
+    if (examId && allCheatingLogs[examId]) {
+      const log = allCheatingLogs[examId].find(l => l.email === email);
+      return log?.totalViolations || 0;
+    }
+    
+    return 0;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,6 +116,7 @@ const ResultPage = () => {
         // Check if examId is in URL query parameters
         const examIdFromUrl = searchParams.get('examId');
         
+        let fetchedResults = [];
         if (examIdFromUrl) {
           // Set the selected exam from URL
           setSelectedExam(examIdFromUrl);
@@ -97,7 +124,8 @@ const ResultPage = () => {
           const resultsResponse = await axiosInstance.get(`/api/users/results/exam/${examIdFromUrl}`, {
             withCredentials: true,
           });
-          setResults(resultsResponse.data.data);
+          fetchedResults = resultsResponse.data.data;
+          setResults(fetchedResults);
         } else {
           // Fetch results based on user role
           if (userInfo?.role === 'teacher') {
@@ -105,14 +133,33 @@ const ResultPage = () => {
             const resultsResponse = await axiosInstance.get('/api/users/results/all', {
               withCredentials: true,
             });
-            setResults(resultsResponse.data.data);
+            fetchedResults = resultsResponse.data.data;
+            setResults(fetchedResults);
           } else {
             // For students, fetch only their visible results
             const resultsResponse = await axiosInstance.get('/api/users/results/user', {
               withCredentials: true,
             });
-            setResults(resultsResponse.data.data);
+            fetchedResults = resultsResponse.data.data;
+            setResults(fetchedResults);
           }
+        }
+
+        // Fetch cheating logs for all unique exams in the results (for teacher view)
+        if (userInfo?.role === 'teacher' && fetchedResults.length > 0) {
+          const uniqueExamIds = [...new Set(fetchedResults.map(r => r.examId))].filter(Boolean);
+          const logsPromises = uniqueExamIds.map(examId =>
+            axiosInstance.get(`/api/users/cheatingLogs/${examId}`, { withCredentials: true })
+              .then(response => ({ examId, data: response.data }))
+              .catch(() => ({ examId, data: [] })) // If fails, return empty array
+          );
+          
+          const logsResults = await Promise.all(logsPromises);
+          const logsMap = {};
+          logsResults.forEach(({ examId, data }) => {
+            logsMap[examId] = Array.isArray(data) ? data : [];
+          });
+          setAllCheatingLogs(logsMap);
         }
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to fetch data');
@@ -160,7 +207,25 @@ const ResultPage = () => {
         const response = await axiosInstance.get('/api/users/results/all', {
           withCredentials: true,
         });
-        setResults(response.data.data);
+        const fetchedResults = response.data.data;
+        setResults(fetchedResults);
+
+        // Fetch cheating logs for all unique exams
+        if (fetchedResults.length > 0) {
+          const uniqueExamIds = [...new Set(fetchedResults.map(r => r.examId))].filter(Boolean);
+          const logsPromises = uniqueExamIds.map(examId =>
+            axiosInstance.get(`/api/users/cheatingLogs/${examId}`, { withCredentials: true })
+              .then(response => ({ examId, data: response.data }))
+              .catch(() => ({ examId, data: [] }))
+          );
+          
+          const logsResults = await Promise.all(logsPromises);
+          const logsMap = {};
+          logsResults.forEach(({ examId, data }) => {
+            logsMap[examId] = Array.isArray(data) ? data : [];
+          });
+          setAllCheatingLogs(logsMap);
+        }
       } catch (err) {
         toast.error('Failed to fetch all results');
       } finally {
@@ -174,6 +239,7 @@ const ResultPage = () => {
           withCredentials: true,
         });
         setResults(response.data.data);
+        // Cheating logs will be fetched by the RTK Query hook when selectedExam changes
       } catch (err) {
         toast.error('Failed to fetch exam results');
       } finally {
@@ -183,14 +249,14 @@ const ResultPage = () => {
   };
 
   const downloadCSV = () => {
-    const headers = ['Student Name', 'Email', 'Exam', 'Total Score (%)', 'Total Marks', 'Coding Submissions', 'Submission Date'];
+    const headers = ['Student Name', 'Email', 'Exam', 'Total Score (%)', 'Total Marks', 'Violations', 'Submission Date'];
     const csvData = filteredResults.map(result => [
       result.userId?.name || '',
       result.userId?.email || '',
       exams.find((e) => e._id === result.examId || e.examId === result.examId)?.examName || result.examId,
       result.percentage.toFixed(1),
       result.totalMarks,
-      result.codingSubmissions?.length || 0,
+      getViolationsCount(result.userId?.email, result.examId),
       new Date(result.createdAt).toLocaleDateString()
     ]);
 
@@ -232,10 +298,10 @@ const ResultPage = () => {
     printWindow.document.write('<div class="summary">');
     printWindow.document.write(`<div class="summary-card"><h3>Total Students</h3><p>${filteredResults.length}</p></div>`);
     printWindow.document.write(`<div class="summary-card"><h3>Average Score</h3><p>${filteredResults.length > 0 ? (filteredResults.reduce((acc, curr) => acc + curr.percentage, 0) / filteredResults.length).toFixed(1) : 0}%</p></div>`);
-    printWindow.document.write(`<div class="summary-card"><h3>Total Submissions</h3><p>${filteredResults.reduce((acc, curr) => acc + (curr.codingSubmissions?.length || 0), 0)}</p></div>`);
+    printWindow.document.write(`<div class="summary-card"><h3>Total Violations</h3><p>${filteredResults.reduce((acc, curr) => acc + getViolationsCount(curr.userId?.email, curr.examId), 0)}</p></div>`);
     printWindow.document.write('</div>');
     printWindow.document.write('<table>');
-    printWindow.document.write('<thead><tr><th>Student Name</th><th>Email</th><th>Exam</th><th>Score (%)</th><th>Total Marks</th><th>Coding Submissions</th><th>Date</th></tr></thead>');
+    printWindow.document.write('<thead><tr><th>Student Name</th><th>Email</th><th>Exam</th><th>Score (%)</th><th>Total Marks</th><th>Violations</th><th>Date</th></tr></thead>');
     printWindow.document.write('<tbody>');
     
     filteredResults.forEach(result => {
@@ -245,7 +311,7 @@ const ResultPage = () => {
       printWindow.document.write(`<td>${exams.find((e) => e._id === result.examId || e.examId === result.examId)?.examName || result.examId}</td>`);
       printWindow.document.write(`<td>${result.percentage.toFixed(1)}%</td>`);
       printWindow.document.write(`<td>${result.totalMarks}</td>`);
-      printWindow.document.write(`<td>${result.codingSubmissions?.length || 0}</td>`);
+      printWindow.document.write(`<td>${getViolationsCount(result.userId?.email, result.examId)}</td>`);
       printWindow.document.write(`<td>${new Date(result.createdAt).toLocaleDateString()}</td>`);
       printWindow.document.write('</tr>');
     });
@@ -714,8 +780,8 @@ const ResultPage = () => {
                       <TableCell>Exam Name</TableCell>
                       <TableCell>Total Score</TableCell>
                       <TableCell>Subjective Score</TableCell>
-                      <TableCell>Coding Submissions</TableCell>
-                      <TableCell>Total Score</TableCell>
+                      <TableCell>Coding Status</TableCell>
+                      <TableCell>Total Marks</TableCell>
                       <TableCell>Submission Date</TableCell>
                       <TableCell>Actions</TableCell>
                     </TableRow>
@@ -1004,7 +1070,7 @@ const ResultPage = () => {
         <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ borderLeft: '4px solid #003974' }}>
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 } }} gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 }, color: '#6B7280', fontWeight: 600 }} gutterBottom>
                 Students
               </Typography>
               <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, color: '#003974', fontWeight: 700 }}>{filteredResults.length}</Typography>
@@ -1014,7 +1080,7 @@ const ResultPage = () => {
         <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ borderLeft: '4px solid #003974' }}>
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 } }} gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 }, color: '#6B7280', fontWeight: 600 }} gutterBottom>
                 Avg Score
               </Typography>
               <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, color: '#003974', fontWeight: 700 }}>
@@ -1031,7 +1097,7 @@ const ResultPage = () => {
         <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ borderLeft: '4px solid #003974' }}>
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 } }} gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 }, color: '#6B7280', fontWeight: 600 }} gutterBottom>
                 Pass Rate
               </Typography>
               <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, color: '#003974', fontWeight: 700 }}>
@@ -1045,7 +1111,7 @@ const ResultPage = () => {
         <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ borderLeft: '4px solid #003974' }}>
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 } }} gutterBottom sx={{ color: '#6B7280', fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.875rem', md: '1.25rem' }, mb: { xs: 0.5, md: 1 }, color: '#6B7280', fontWeight: 600 }} gutterBottom>
                 Results
               </Typography>
               <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, color: '#003974', fontWeight: 700 }}>
@@ -1362,7 +1428,7 @@ const ResultPage = () => {
                     <TableCell sx={{ fontWeight: 700, color: '#0F2242' }}>Email</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: '#0F2242' }}>Exam</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: '#0F2242' }}>Total Score</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#0F2242' }}>Coding Submissions</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#0F2242' }}>Violations</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: '#0F2242' }}>Total Score</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: '#0F2242' }}>Submission Date</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: '#0F2242' }}>Actions</TableCell>
@@ -1394,9 +1460,15 @@ const ResultPage = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <CheckCircle sx={{ color: '#003974' }} fontSize="small" />
-                        </Box>
+                        <Chip
+                          label={getViolationsCount(result.userId?.email, result.examId)}
+                          size="small"
+                          sx={{
+                            backgroundColor: getViolationsCount(result.userId?.email, result.examId) > 5 ? '#FFEBEE' : '#E8F5E9',
+                            color: getViolationsCount(result.userId?.email, result.examId) > 5 ? '#ED1C24' : '#4CAF50',
+                            fontWeight: 600,
+                          }}
+                        />
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" sx={{ color: '#6B7280' }}>
@@ -1567,10 +1639,18 @@ const ResultPage = () => {
                         />
                       </Box>
 
-                      {/* Coding Submission */}
+                      {/* Violations */}
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body2" color="textSecondary">Coding</Typography>
-                        <CheckCircle sx={{ color: '#003974' }} fontSize="small" />
+                        <Typography variant="body2" color="textSecondary">Violations</Typography>
+                        <Chip
+                          size="small"
+                          label={getViolationsCount(result.userId?.email, result.examId)}
+                          sx={{
+                            backgroundColor: getViolationsCount(result.userId?.email, result.examId) > 5 ? '#FFEBEE' : '#E8F5E9',
+                            color: getViolationsCount(result.userId?.email, result.examId) > 5 ? '#ED1C24' : '#4CAF50',
+                            fontWeight: 600,
+                          }}
+                        />
                       </Box>
 
                       {/* Total Marks */}
