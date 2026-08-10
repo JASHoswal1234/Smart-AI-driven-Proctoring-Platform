@@ -9,6 +9,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import ScreenshotMonitorIcon from '@mui/icons-material/ScreenshotMonitor';
+import MicIcon from '@mui/icons-material/Mic';
 import { CircularProgress } from '@mui/material';
 import Webcam from 'react-webcam';
 import { FaceMesh } from '@mediapipe/face_mesh';
@@ -18,8 +19,9 @@ import { setCredentials } from 'src/slices/authSlice';
 const STEP_CAM   = 0;
 const STEP_FACE  = 1;
 const STEP_SHOT  = 2;
-const STEP_READY = 3;
-const STEPS = ['Camera Check', 'Face Verification', 'Screenshot Permission', 'Ready'];
+const STEP_MIC   = 3;
+const STEP_READY = 4;
+const STEPS = ['Camera Check', 'Face Verification', 'Screenshot Permission', 'Microphone Check', 'Ready'];
 
 const YAW_LEFT_MAX  = 0.55;
 const YAW_RIGHT_MIN = 1.45;
@@ -36,6 +38,7 @@ export default function SystemCheck() {
   const [step, setStep]           = useState(STEP_CAM);
   const [camStatus, setCamStatus] = useState('checking');
   const [shotStatus, setShotStatus] = useState('idle');
+  const [micStatus, setMicStatus] = useState('idle');
   const [capturedPhoto, setCapturedPhoto] = useState(null);
 
   const webcamRef      = useRef(null);
@@ -139,10 +142,27 @@ export default function SystemCheck() {
     } catch { setShotStatus('denied'); }
   };
 
+  // ── Microphone permission ────────────────────────────────────────────────────
+  const requestMicrophone = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Stop the stream immediately - we just wanted to check permission
+      stream.getTracks().forEach(track => track.stop());
+      setMicStatus('granted');
+    } catch (error) {
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setMicStatus('denied');
+      } else {
+        setMicStatus('denied');
+      }
+    }
+  };
+
   // ── Navigation ───────────────────────────────────────────────────────────────
   const handleNext = () => {
     if (step === STEP_CAM  && camStatus === 'ok')       { setStep(STEP_FACE);  return; }
-    if (step === STEP_SHOT && shotStatus === 'granted')  { setStep(STEP_READY); return; }
+    if (step === STEP_SHOT && shotStatus === 'granted')  { setStep(STEP_MIC); return; }
+    if (step === STEP_MIC && micStatus === 'granted')  { setStep(STEP_READY); return; }
     if (step === STEP_READY) navigate(`/exam/${examId}/${uniqueId()}`);
   };
 
@@ -281,7 +301,45 @@ export default function SystemCheck() {
             </Stack>
           )}
 
-          {/* STEP 3 — Ready */}
+          {/* STEP 3 — Microphone */}
+          {step === STEP_MIC && (
+            <Stack spacing={2.5} alignItems="center">
+              <MicIcon sx={{ fontSize: 64, color: '#003974' }} />
+              <Box textAlign="center">
+                <Typography variant="h6" fontWeight={700} mb={1}>Microphone Permission</Typography>
+                <Typography variant="body2" color="text.secondary" maxWidth={400}>
+                  The exam system monitors audio levels to detect suspicious communication during the exam.
+                  No audio is recorded or stored - only volume levels are analyzed.
+                </Typography>
+              </Box>
+              {micStatus === 'idle' && (
+                <Button variant="contained" startIcon={<MicIcon />} onClick={requestMicrophone}
+                  sx={{ backgroundColor: '#003974', borderRadius: '10px', px: 4, fontWeight: 700 }}>
+                  Allow Microphone
+                </Button>
+              )}
+              {micStatus === 'granted' && (
+                <Stack spacing={1.5} alignItems="center">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CheckCircleIcon sx={{ color: '#16a34a' }} />
+                    <Typography fontWeight={600} color="#16a34a">Permission granted</Typography>
+                  </Stack>
+                  <Button variant="contained" onClick={handleNext} sx={{ backgroundColor: '#003974', borderRadius: '10px', px: 5, fontWeight: 700 }}>Next</Button>
+                </Stack>
+              )}
+              {micStatus === 'denied' && (
+                <Stack spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} alignItems="center"><ErrorIcon sx={{ color: '#dc2626' }} /><Typography fontWeight={600} color="#dc2626">Permission denied</Typography></Stack>
+                  <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={400}>
+                    Microphone access is required for audio monitoring. Please allow microphone in browser settings and try again.
+                  </Typography>
+                  <Button variant="outlined" onClick={requestMicrophone} sx={{ borderRadius: '10px' }}>Try Again</Button>
+                </Stack>
+              )}
+            </Stack>
+          )}
+
+          {/* STEP 4 — Ready */}
           {step === STEP_READY && (
             <Stack spacing={2.5} alignItems="center">
               {/* Show captured photo */}
@@ -300,7 +358,7 @@ export default function SystemCheck() {
               </Box>
 
               <Stack spacing={1} width="100%">
-                {['Camera access', 'Face verification (left, right, center)', 'Identity photo captured', 'Screenshot permission'].map((label) => (
+                {['Camera access', 'Face verification (left, right, center)', 'Identity photo captured', 'Screenshot permission', 'Microphone access'].map((label) => (
                   <Stack key={label} direction="row" alignItems="center" spacing={1}
                     sx={{ backgroundColor: '#f0fdf4', borderRadius: '10px', px: 2, py: 1 }}>
                     <CheckCircleIcon sx={{ color: '#16a34a', fontSize: 16 }} />

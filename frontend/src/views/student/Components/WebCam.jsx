@@ -24,6 +24,14 @@ const OBJECT_CONFIRMATION_FRAMES = 2;
 const CELLPHONE_CONFIDENCE_THRESHOLD = 0.55;
 const OBJECT_CONFIDENCE_THRESHOLD = 0.75;
 
+// ================= AUDIO MONITORING CONSTANTS =================
+// Audio threshold: trigger when RMS exceeds this (0-255 range, ~30 = moderate speaking)
+const AUDIO_THRESHOLD = 30;
+// Duration in milliseconds: sustained audio above threshold needed to trigger violation
+const AUDIO_DURATION_THRESHOLD = 4000; // 4 seconds of continuous speaking
+// Cooldown for audio violations (same as other violations)
+const AUDIO_COOLDOWN_MS = COOLDOWN_MS;
+
 export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, compact = false }) {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
@@ -35,6 +43,13 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
   const totalViolationsRef = useRef(0);
   const onTerminateRef = useRef(onTerminate); // always latest
   const currentFaceLandmarksRef = useRef(null); // Store latest face landmarks
+  
+  // Audio monitoring refs
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const audioStreamRef = useRef(null);
+  const audioStartTimeRef = useRef(null); // When sustained audio started
+  const audioCheckIntervalRef = useRef(null); // Interval ID for audio checking
   
   // Confirmation counters for reducing false positives
   const noFaceFramesRef = useRef(0);
@@ -312,6 +327,131 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
 
     run();
     return () => { if (intervalId) clearInterval(intervalId); };
+  }, [handleViolation]);
+
+  // ================= AUDIO MONITORING =================
+  useEffect(() => {
+    let mounted = true;
+
+    const initAudioMonitoring = async () => {
+      try {
+        console.log('🎤 Initializing audio monitoring...');
+        
+        // Request microphone access (audio only)
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        
+        if (!mounted) {
+          // Component unmounted before stream was obtained
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
+        audioStreamRef.current = stream;
+
+        // Create Web Audio API context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioContextRef.current = audioContext;
+
+        // Create analyser for volume detection
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        analyserRef.current = analyser;
+
+        // Connect microphone stream to analyser
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+
+        console.log('✅ Audio monitoring initialized');
+
+        // Start checking audio levels periodically
+        audioCheckIntervalRef.current = setInterval(() => {
+          // Stop processing if 10+ violations
+          if (totalViolationsRef.current >= 10) return;
+
+          if (!analyserRef.current) return;
+
+          // Get audio data (frequency domain)
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+
+          // Calculate RMS (Root Mean Square) for volume level
+          const sum = dataArray.reduce((acc, val) => acc + val * val, 0);
+          const rms = Math.sqrt(sum / dataArray.length);
+
+          const now = Date.now();
+
+          // Check if audio exceeds threshold
+          if (rms > AUDIO_THRESHOLD) {
+            // Start tracking sustained audio
+            if (!audioStartTimeRef.current) {
+              audioStartTimeRef.current = now;
+              console.log('[Audio] 🔊 Sustained audio started, RMS:', rms.toFixed(1));
+            }
+
+            // Check if audio has been sustained long enough
+            const duration = now - audioStartTimeRef.current;
+            if (duration >= AUDIO_DURATION_THRESHOLD) {
+              console.log('[Audio] 🚨 Suspicious audio detected! Duration:', duration, 'ms, RMS:', rms.toFixed(1));
+              handleViolation('suspiciousAudio', 'Suspicious audio/communication detected');
+              // Reset start time after triggering
+              audioStartTimeRef.current = null;
+            }
+          } else {
+            // Audio dropped below threshold - reset timer
+            if (audioStartTimeRef.current) {
+              const duration = now - audioStartTimeRef.current;
+              console.log('[Audio] 🔇 Audio stopped. Duration was:', duration, 'ms (threshold:', AUDIO_DURATION_THRESHOLD, 'ms)');
+              audioStartTimeRef.current = null;
+            }
+          }
+        }, 200); // Check every 200ms for responsive detection
+
+      } catch (error) {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          console.warn('⚠️ Microphone access denied - audio monitoring disabled');
+        } else {
+          console.error('❌ Error initializing audio monitoring:', error);
+        }
+      }
+    };
+
+    initAudioMonitoring();
+
+    // Cleanup function
+    return () => {
+      mounted = false;
+      console.log('🧹 Cleaning up audio monitoring...');
+
+      // Stop interval
+      if (audioCheckIntervalRef.current) {
+        clearInterval(audioCheckIntervalRef.current);
+        audioCheckIntervalRef.current = null;
+      }
+
+      // Close audio context
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+
+      // Stop microphone stream
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(track => track.stop());
+        audioStreamRef.current = null;
+      }
+
+      // Reset audio tracking
+      audioStartTimeRef.current = null;
+      analyserRef.current = null;
+
+      console.log('✅ Audio monitoring cleaned up');
+    };
   }, [handleViolation]);
 
   const totalViolations = cheatingLog.totalViolations || 0;
