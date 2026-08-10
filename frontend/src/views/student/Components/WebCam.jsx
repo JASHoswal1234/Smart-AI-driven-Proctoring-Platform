@@ -10,8 +10,8 @@ import '@tensorflow/tfjs-backend-webgl';
 
 // Cooldown per violation type in ms
 const COOLDOWN_MS = 8000;
-// Frames looking away before triggering (4 frames = ~4 seconds)
-const AWAY_FRAME_THRESHOLD = 4;
+// Frames looking away before triggering (10 frames = ~5 seconds at 500ms interval) - allow time for rough work
+const AWAY_FRAME_THRESHOLD = 10;
 // Consecutive frames needed to confirm no-face (reduces false positives)
 const NO_FACE_CONFIRMATION_FRAMES = 2;
 // Multiple faces needs MORE frames - strictest check (must see 2+ faces for 3 consecutive frames)
@@ -200,7 +200,9 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
       smoothPoseRef.current.pitch = alpha * smoothPoseRef.current.pitch + (1 - alpha) * pitchRatio;
 
       const { yaw, pitch } = smoothPoseRef.current;
-      const isAway = yaw < 0.45 || yaw > 1.55 || pitch < 0.45 || pitch > 1.75;
+      // Very lenient thresholds - allow looking down for rough work, reading questions
+      // Only flag extreme movements (completely turning away or looking far down for extended time)
+      const isAway = yaw < 0.25 || yaw > 1.75 || pitch < 0.25 || pitch > 2.0;
 
       if (isAway) {
         awayFramesRef.current++;
