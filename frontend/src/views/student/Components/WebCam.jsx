@@ -25,12 +25,12 @@ const CELLPHONE_CONFIDENCE_THRESHOLD = 0.55;
 const OBJECT_CONFIDENCE_THRESHOLD = 0.75;
 
 // ================= AUDIO MONITORING CONSTANTS =================
-// Audio threshold: trigger when RMS exceeds this (0-255 range, ~30 = moderate speaking)
-const AUDIO_THRESHOLD = 30;
-// Duration in milliseconds: sustained audio above threshold needed to trigger violation
-const AUDIO_DURATION_THRESHOLD = 4000; // 4 seconds of continuous speaking
-// Cooldown for audio violations (same as other violations)
-const AUDIO_COOLDOWN_MS = COOLDOWN_MS;
+// Moderate threshold: balances ambient noise vs speech detection (ambient = 20-40, speech = 50-100+)
+const AUDIO_THRESHOLD = 45;
+// Duration in milliseconds: sustained audio above threshold needed to trigger warning (8 seconds = prolonged conversation)
+const AUDIO_DURATION_THRESHOLD = 8000; // 8 seconds of continuous speaking
+// Variance threshold: speech has peaks/valleys (>15), ambient noise is flat (<15)
+const VARIANCE_THRESHOLD = 15;
 
 export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, compact = false }) {
   const webcamRef = useRef(null);
@@ -50,6 +50,7 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
   const audioStreamRef = useRef(null);
   const audioStartTimeRef = useRef(null); // When sustained audio started
   const audioCheckIntervalRef = useRef(null); // Interval ID for audio checking
+  const audioSamplesRef = useRef([]); // Store RMS samples for variance calculation
   
   // Confirmation counters for reducing false positives
   const noFaceFramesRef = useRef(0);
@@ -96,6 +97,20 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
       console.error('Screenshot upload failed:', err);
     }
     return null;
+  }, []);
+
+  // ================= HANDLE AUDIO WARNING (NO VIOLATION COUNT) =================
+  const handleAudioWarning = useCallback((label) => {
+    const now = Date.now();
+
+    // Per-type cooldown check - only show warning every 8 seconds
+    if (cooldownMapRef.current['audioWarning'] && now - cooldownMapRef.current['audioWarning'] < COOLDOWN_MS) return;
+    cooldownMapRef.current['audioWarning'] = now;
+
+    console.log('[WebCam] ⚠️ AUDIO WARNING (not counted as violation):', label);
+
+    // Show warning popup without incrementing violation count
+    swal('⚠️ Audio Detected', `${label}\n\nThis is a warning and does not count toward exam termination.`, 'warning');
   }, []);
 
   // ================= HANDLE VIOLATION =================
@@ -386,21 +401,39 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
 
           const now = Date.now();
 
-          // Check if audio exceeds threshold
+          // Check if audio exceeds HIGH threshold (120 - ignores ambient noise)
           if (rms > AUDIO_THRESHOLD) {
             // Start tracking sustained audio
             if (!audioStartTimeRef.current) {
               audioStartTimeRef.current = now;
+              audioSamplesRef.current = []; // Reset samples
               console.log('[Audio] 🔊 Sustained audio started, RMS:', rms.toFixed(1));
             }
 
-            // Check if audio has been sustained long enough
+            // Collect RMS samples for variance calculation
+            audioSamplesRef.current.push(rms);
+
+            // Check if audio has been sustained long enough (8 seconds)
             const duration = now - audioStartTimeRef.current;
             if (duration >= AUDIO_DURATION_THRESHOLD) {
-              console.log('[Audio] 🚨 Suspicious audio detected! Duration:', duration, 'ms, RMS:', rms.toFixed(1));
-              handleViolation('suspiciousAudio', 'Suspicious audio/communication detected');
-              // Reset start time after triggering
+              // Calculate variance from collected samples
+              const samples = audioSamplesRef.current;
+              const mean = samples.reduce((a, b) => a + b, 0) / samples.length;
+              const variance = samples.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / samples.length;
+
+              console.log('[Audio] 📊 RMS mean:', mean.toFixed(1), 'Variance:', variance.toFixed(1), 'Samples:', samples.length);
+
+              // Only trigger if variance indicates speech pattern (peaks/valleys > 20)
+              if (variance > VARIANCE_THRESHOLD) {
+                console.log('[Audio] 🚨 Suspicious audio detected! Duration:', duration, 'ms, Variance:', variance.toFixed(1));
+                handleAudioWarning('Suspicious audio/communication detected');
+              } else {
+                console.log('[Audio] ✅ Flat ambient noise detected (variance too low), ignoring');
+              }
+
+              // Reset after checking
               audioStartTimeRef.current = null;
+              audioSamplesRef.current = [];
             }
           } else {
             // Audio dropped below threshold - reset timer
@@ -408,6 +441,7 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
               const duration = now - audioStartTimeRef.current;
               console.log('[Audio] 🔇 Audio stopped. Duration was:', duration, 'ms (threshold:', AUDIO_DURATION_THRESHOLD, 'ms)');
               audioStartTimeRef.current = null;
+              audioSamplesRef.current = [];
             }
           }
         }, 200); // Check every 200ms for responsive detection
@@ -448,11 +482,12 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
 
       // Reset audio tracking
       audioStartTimeRef.current = null;
+      audioSamplesRef.current = [];
       analyserRef.current = null;
 
       console.log('✅ Audio monitoring cleaned up');
     };
-  }, [handleViolation]);
+  }, [handleAudioWarning]);
 
   const totalViolations = cheatingLog.totalViolations || 0;
 
