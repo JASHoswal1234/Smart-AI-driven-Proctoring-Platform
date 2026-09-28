@@ -60,6 +60,27 @@ export const examApiSlice = apiSlice.injectEndpoints({
         method: 'GET',
       }),
     }),
+
+    // Get all results for a specific exam (teacher only)
+    getResultsByExamId: builder.query({
+      query: (examId) => ({
+        url: `${EXAMS_URL}/results/exam/${examId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, examId) => [
+        { type: 'Result', id: examId },
+        { type: 'Result', id: 'LIST' },
+      ],
+    }),
+
+    // Get all results across all exams (teacher only)
+    getAllResults: builder.query({
+      query: () => ({
+        url: `${EXAMS_URL}/results/all`,
+        method: 'GET',
+      }),
+      providesTags: [{ type: 'Result', id: 'LIST' }],
+    }),
   }),
 });
 
@@ -72,4 +93,6 @@ export const {
   useBulkCreateQuestionsMutation,
   useDeleteExamMutation,
   useGetUserResultsQuery,
+  useGetResultsByExamIdQuery,
+  useGetAllResultsQuery,
 } = examApiSlice;

@@ -32,6 +32,7 @@ import UserProfile from '../views/authentication/UserProfile';
 import CreateExamPage from '../views/teacher/CreateExamPage';
 import ExamLogPage from '../views/teacher/ExamLogPage';
 import AddQuestions from '../views/teacher/AddQuestions';
+import ProctoringReportPage from '../views/teacher/ProctoringReportPage';
 import PrivateRoute from '../views/authentication/PrivateRoute';
 import TeacherRoute from '../views/authentication/TeacherRoute';
 
@@ -55,6 +56,7 @@ const Router = createBrowserRouter(
             <Route path="create-exam" element={<CreateExamPage />} />
             <Route path="add-questions" element={<AddQuestions />} />
             <Route path="exam-log" element={<ExamLogPage />} />
+            <Route path="proctoring-report/:examId/:email" element={<ProctoringReportPage />} />
           </Route>
         </Route>
         <Route element={<ExamLayout />}>

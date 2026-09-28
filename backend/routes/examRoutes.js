@@ -14,6 +14,7 @@ import {
 import {
   getCheatingLogsByExamId,
   saveCheatingLog,
+  getStudentCheatingLog,
 } from "../controllers/cheatingLogController.js";
 const examRoutes = express.Router();
 
@@ -23,6 +24,7 @@ examRoutes.route("/exam/questions").post(protect, createQuestion);
 examRoutes.route("/exam/questions/bulk").post(protect, bulkCreateQuestions);
 examRoutes.route("/questions/exam/:examId").get(protect, getQuestionsByExamId); // Add this
 examRoutes.route("/exam/questions/:examId").get(protect, getQuestionsByExamId);
+examRoutes.route("/cheatingLogs/student/:examId/:email").get(protect, getStudentCheatingLog);
 examRoutes.route("/cheatingLogs/:examId").get(protect, getCheatingLogsByExamId);
 examRoutes.route("/cheatingLogs").post(protect, saveCheatingLog);
 // Fix: use DELETE method instead of POST for deleting exams

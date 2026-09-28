@@ -17,6 +17,17 @@ export const cheatingLogApiSlice = apiSlice.injectEndpoints({
         { type: 'CheatingLog', id: 'LIST' },
       ],
     }),
+
+    // Get cheating log for a single student in a specific exam (teacher only)
+    getStudentCheatingLog: builder.query({
+      query: ({ examId, email }) => ({
+        url: `${CHEATING_LOGS_URL}/cheatingLogs/student/${examId}/${encodeURIComponent(email)}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, { examId, email }) => [
+        { type: 'CheatingLog', id: `${examId}-${email}` },
+      ],
+    }),
     // Save a new cheating log entry for an exam
     saveCheatingLog: builder.mutation({
       query: (data) => ({
@@ -33,4 +44,4 @@ export const cheatingLogApiSlice = apiSlice.injectEndpoints({
 });
 
 // Export the generated hooks for each endpoint
-export const { useGetCheatingLogsQuery, useSaveCheatingLogMutation } = cheatingLogApiSlice;
+export const { useGetCheatingLogsQuery, useSaveCheatingLogMutation, useGetStudentCheatingLogQuery } = cheatingLogApiSlice;

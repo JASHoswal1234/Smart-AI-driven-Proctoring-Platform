@@ -114,4 +114,31 @@ const getCheatingLogsByExamId = asyncHandler(async (req, res) => {
   }
 });
 
-export { saveCheatingLog, getCheatingLogsByExamId };
+// @desc Get cheating log for a single student in a specific exam
+// @route GET /api/users/cheatingLogs/student/:examId/:email
+// @access Private (teacher only)
+const getStudentCheatingLog = asyncHandler(async (req, res) => {
+  const { examId, email } = req.params;
+
+  if (req.user.role !== 'teacher') {
+    res.status(403);
+    throw new Error('Not authorized — teachers only');
+  }
+
+  const log = await CheatingLog.findOne({ examId, email });
+
+  if (!log) {
+    // Return an empty-log shape rather than 404 so the frontend can render gracefully
+    return res.status(200).json({
+      examId,
+      email,
+      username: '',
+      totalViolations: 0,
+      screenshots: [],
+    });
+  }
+
+  res.status(200).json(log);
+});
+
+export { saveCheatingLog, getCheatingLogsByExamId, getStudentCheatingLog };
