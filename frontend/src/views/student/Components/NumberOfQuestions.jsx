@@ -1,28 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { memo } from 'react';
 import Grid from '@mui/material/Grid';
 import Avatar from '@mui/material/Avatar';
 import { Box, Stack, Typography } from '@mui/material';
 
-const NumberOfQuestions = ({ questionLength, examDurationInSeconds, currentQuestion, answeredQuestions = [], onTimerTick }) => {
+// Stable sx objects — avoids MUI/emotion recalculating styles on every render
+const sxCurrent   = { width: { xs: '36px', md: '40px' }, height: { xs: '36px', md: '40px' }, fontSize: { xs: '13px', md: '15px' }, cursor: 'default', m: 0.5, background: '#003974', color: '#fff', fontWeight: 700, border: '2px solid #1565c0' };
+const sxAnswered  = { width: { xs: '36px', md: '40px' }, height: { xs: '36px', md: '40px' }, fontSize: { xs: '13px', md: '15px' }, cursor: 'default', m: 0.5, background: '#22c55e', color: '#fff', fontWeight: 700, border: 'none' };
+const sxUnanswered = { width: { xs: '36px', md: '40px' }, height: { xs: '36px', md: '40px' }, fontSize: { xs: '13px', md: '15px' }, cursor: 'default', m: 0.5, background: '#e0e0e0', color: '#555', fontWeight: 700, border: 'none' };
+
+// Wrapped in React.memo — skips re-render unless props actually change.
+// The timer that was previously here has been removed: it was a duplicate of the
+// one in TestPage's useExamTimer hook, causing TestPage to re-render twice per second.
+const NumberOfQuestions = memo(function NumberOfQuestions({
+  questionLength,
+  currentQuestion,
+  answeredQuestions = [],
+}) {
   const totalQuestions = questionLength;
   const questionNumbers = Array.from({ length: totalQuestions }, (_, i) => i + 1);
-
-  const [timeLeft, setTimeLeft] = useState(examDurationInSeconds * 60);
-
-  useEffect(() => {
-    setTimeLeft(examDurationInSeconds * 60);
-  }, [examDurationInSeconds]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        const next = prev <= 1 ? 0 : prev - 1;
-        if (onTimerTick) onTimerTick(next);
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Rows of 5
   const rows = [];
@@ -51,27 +46,13 @@ const NumberOfQuestions = ({ questionLength, examDurationInSeconds, currentQuest
             <Stack direction="row" alignItems="center" justifyContent="start" flexWrap="wrap">
               {row.map((questionNumber) => {
                 const idx = questionNumber - 1;
-                const isCurrent = (currentQuestion ?? 0) === idx;
+                const isCurrent  = (currentQuestion ?? 0) === idx;
                 const isAnswered = answeredQuestions.includes(idx);
                 return (
                   <Avatar
                     key={questionNumber}
                     variant="rounded"
-                    sx={{
-                      width: { xs: '36px', md: '40px' },
-                      height: { xs: '36px', md: '40px' },
-                      fontSize: { xs: '13px', md: '15px' },
-                      cursor: 'default',
-                      m: 0.5,
-                      background: isCurrent
-                        ? '#003974'
-                        : isAnswered
-                        ? '#22c55e'
-                        : '#e0e0e0',
-                      color: isCurrent || isAnswered ? '#fff' : '#555',
-                      fontWeight: 700,
-                      border: isCurrent ? '2px solid #1565c0' : 'none',
-                    }}
+                    sx={isCurrent ? sxCurrent : isAnswered ? sxAnswered : sxUnanswered}
                   >
                     {questionNumber}
                   </Avatar>
@@ -83,6 +64,6 @@ const NumberOfQuestions = ({ questionLength, examDurationInSeconds, currentQuest
       </Grid>
     </Box>
   );
-};
+});
 
 export default NumberOfQuestions;

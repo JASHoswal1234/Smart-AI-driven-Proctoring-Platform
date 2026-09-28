@@ -424,7 +424,6 @@ const TestPage = () => {
   const QuestionPanel = (
     <NumberOfQuestions
       questionLength={questions.length}
-      examDurationInSeconds={examDurationInSeconds}
       currentQuestion={currentQuestion}
       answeredQuestions={answeredQuestions}
     />

@@ -44,6 +44,7 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
   const canvasRef = useRef(null);
   const faceMeshRef = useRef(null);
   const isProcessingRef = useRef(false);
+  const isObjectDetectingRef = useRef(false); // prevents stacked COCO-SSD calls
   const smoothPoseRef = useRef({ yaw: 1, pitch: 1 });
   const awayFramesRef = useRef(0);
   const cooldownMapRef = useRef({});
@@ -277,69 +278,77 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
 
           const canvas = canvasRef.current;
           if (!canvas) return;
-          
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
 
-          // Clear canvas before drawing
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          // Guard: skip this tick if a previous object-detection pass is still running
+          if (isObjectDetectingRef.current) return;
+          isObjectDetectingRef.current = true;
 
-          // FaceMesh send
-          if (faceMeshRef.current && !isProcessingRef.current) {
-            isProcessingRef.current = true;
-            try {
-              await faceMeshRef.current.send({ image: video });
-            } catch (e) {
-              // suppress
+          try {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas before drawing
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // FaceMesh send
+            if (faceMeshRef.current && !isProcessingRef.current) {
+              isProcessingRef.current = true;
+              try {
+                await faceMeshRef.current.send({ image: video });
+              } catch (e) {
+                // suppress
+              }
+              isProcessingRef.current = false;
             }
-            isProcessingRef.current = false;
-          }
 
           // Draw face rectangles first (from stored landmarks)
-          if (currentFaceLandmarksRef.current) {
-            drawFaceRect(currentFaceLandmarksRef.current, ctx, canvas);
-          }
-
-          // Object detection and drawing
-          const objects = await net.detect(video);
-          drawRect(objects, ctx);
-
-          // Reset all object counters first
-          const detectedNow = { cellPhone: false, book: false, laptop: false };
-
-          objects.forEach(({ class: cls, score }) => {
-            // Cell phone: lower confidence, detects partial phones
-            if (cls === 'cell phone' && score >= CELLPHONE_CONFIDENCE_THRESHOLD) {
-              detectedNow.cellPhone = true;
+            if (currentFaceLandmarksRef.current) {
+              drawFaceRect(currentFaceLandmarksRef.current, ctx, canvas);
             }
-            // Books/laptops: higher confidence
-            if (cls === 'book' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
-              detectedNow.book = true;
-            }
-            if (cls === 'laptop' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
-              detectedNow.laptop = true;
-            }
-          });
 
-          // Increment counters for detected objects, reset others
-          Object.keys(detectedNow).forEach((objType) => {
-            if (detectedNow[objType]) {
-              objectDetectionRef.current[objType]++;
-              // Cell phone needs fewer frames for faster detection
-              const threshold = objType === 'cellPhone' ? CELLPHONE_CONFIRMATION_FRAMES : OBJECT_CONFIRMATION_FRAMES;
-              
-              if (objectDetectionRef.current[objType] >= threshold) {
-                objectDetectionRef.current[objType] = 0; // Reset after triggering
-                if (objType === 'cellPhone') handleViolation('cellPhone', 'Cell phone detected');
-                if (objType === 'book') handleViolation('prohibitedObject', 'Book detected');
-                if (objType === 'laptop') handleViolation('prohibitedObject', 'Laptop detected');
+            // Object detection and drawing
+            const objects = await net.detect(video);
+            drawRect(objects, ctx);
+
+            // Reset all object counters first
+            const detectedNow = { cellPhone: false, book: false, laptop: false };
+
+            objects.forEach(({ class: cls, score }) => {
+              // Cell phone: lower confidence, detects partial phones
+              if (cls === 'cell phone' && score >= CELLPHONE_CONFIDENCE_THRESHOLD) {
+                detectedNow.cellPhone = true;
               }
-            } else {
-              objectDetectionRef.current[objType] = 0; // Reset if not detected
-            }
-          });
-        }, 500); // Run every 500ms for smoother visuals
+              // Books/laptops: higher confidence
+              if (cls === 'book' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
+                detectedNow.book = true;
+              }
+              if (cls === 'laptop' && score >= OBJECT_CONFIDENCE_THRESHOLD) {
+                detectedNow.laptop = true;
+              }
+            });
+
+            // Increment counters for detected objects, reset others
+            Object.keys(detectedNow).forEach((objType) => {
+              if (detectedNow[objType]) {
+                objectDetectionRef.current[objType]++;
+                const threshold = objType === 'cellPhone' ? CELLPHONE_CONFIRMATION_FRAMES : OBJECT_CONFIRMATION_FRAMES;
+                if (objectDetectionRef.current[objType] >= threshold) {
+                  objectDetectionRef.current[objType] = 0;
+                  if (objType === 'cellPhone') handleViolation('cellPhone', 'Cell phone detected');
+                  if (objType === 'book') handleViolation('prohibitedObject', 'Book detected');
+                  if (objType === 'laptop') handleViolation('prohibitedObject', 'Laptop detected');
+                }
+              } else {
+                objectDetectionRef.current[objType] = 0;
+              }
+            });
+          } catch (e) {
+            console.error('[WebCam] Detection tick error:', e);
+          } finally {
+            isObjectDetectingRef.current = false; // Always release guard
+          }
+        }, 1000); // 1000ms — halves GPU pressure, violation latency still acceptable
       } catch (error) {
         console.error('❌ Error loading models:', error);
         setModelsLoading(false);
@@ -479,7 +488,7 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
               audioSamplesRef.current = [];
             }
           }
-        }, 200); // Check every 200ms
+        }, 1000); // 1000ms is sufficient — detection requires 15s of sustained audio anyway
 
       } catch (error) {
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {

@@ -9,8 +9,6 @@ import { Select, MenuItem, InputLabel } from '@mui/material';
 import { useNavigate, useParams } from 'react-router';
 import axiosInstance from '../../../axios';
 import { toast } from 'react-toastify';
-import { useCheatingLog } from 'src/context/CheatingLogContext';
-import { useSaveCheatingLogMutation } from 'src/slices/cheatingLogApiSlice';
 import { useSelector } from 'react-redux';
 
 // Option letter labels
@@ -145,8 +143,6 @@ export default function MultipleChoiceQuestion({
   const [answeredIndices, setAnsweredIndices] = useState([]);
 
   const { examId } = useParams();
-  const { cheatingLog } = useCheatingLog();
-  const [saveCheatingLogMutation] = useSaveCheatingLogMutation();
   const { userInfo } = useSelector((state) => state.auth);
   const [isLastQuestion, setIsLastQuestion] = useState(false);
 
