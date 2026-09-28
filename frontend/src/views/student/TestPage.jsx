@@ -76,6 +76,7 @@ const TestPage = () => {
   const { cheatingLog, updateCheatingLog } = useCheatingLog();
   const [saveCheatingLogMutation] = useSaveCheatingLogMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modelsReady, setModelsReady] = useState(false); // true once COCO-SSD + FaceMesh finish loading
   const [questions, setQuestions] = useState([]);
   const { data, isLoading } = useGetQuestionsQuery(examId);
   const { data: codingQuestionsData, isLoading: isCodingLoading } = useGetCodingQuestionsQuery(examId);
@@ -96,7 +97,8 @@ const TestPage = () => {
 
   useEffect(() => { cheatingLogRef.current = cheatingLog; }, [cheatingLog]);
 
-  const { timeLeft, formatted: timeFormatted } = useExamTimer(examDurationInSeconds, () => {
+  // Timer only starts after AI models have loaded — students don't lose time waiting for the platform
+  const { timeLeft, formatted: timeFormatted } = useExamTimer(modelsReady ? examDurationInSeconds : 0, () => {
     toast.warning('Time is up! Submitting your test...');
     handleTestSubmissionRef.current?.(true); // skipConfirm = true
   });
@@ -421,6 +423,28 @@ const TestPage = () => {
     );
   }
 
+  // Full-screen loading overlay while AI models initialise — timer has NOT started yet.
+  // The real exam layout (with WebCam) is rendered underneath so models only load once.
+  const loadingOverlay = !modelsReady ? (
+    <Box
+      sx={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        backgroundColor: '#f8faff',
+        display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', alignItems: 'center', gap: 3,
+      }}
+    >
+      <CircularProgress size={56} thickness={4} sx={{ color: '#003974' }} />
+      <Typography variant="h6" fontWeight={700} color="#003974">
+        Setting up AI Proctoring...
+      </Typography>
+      <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={340}>
+        Your exam timer will start automatically once the proctoring system is ready.
+        This usually takes 10–20 seconds.
+      </Typography>
+    </Box>
+  ) : null;
+
   const QuestionPanel = (
     <NumberOfQuestions
       questionLength={questions.length}
@@ -431,6 +455,8 @@ const TestPage = () => {
 
   return (
     <PageContainer title="TestPage" description="This is TestPage">
+      {/* AI model loading overlay — sits above everything, removed once models are ready */}
+      {loadingOverlay}
       {/* ── Mobile fixed AppBar ── */}
       {isMobile && (
         <AppBar position="fixed" elevation={2} sx={{ top: 0, left: 0, right: 0, zIndex: 1200, backgroundColor: '#003974' }}>
@@ -557,7 +583,7 @@ const TestPage = () => {
                   boxShadow: 2,
                 }}
               >
-                <WebCam cheatingLog={cheatingLog} updateCheatingLog={updateCheatingLog} />
+                <WebCam cheatingLog={cheatingLog} updateCheatingLog={updateCheatingLog} onModelsReady={() => setModelsReady(true)} />
               </Box>
             )}
           </Grid>
@@ -620,7 +646,7 @@ const TestPage = () => {
                       backgroundColor: '#000',
                       borderRadius: '10px',
                     }}>
-                      <WebCam cheatingLog={cheatingLog} updateCheatingLog={updateCheatingLog} />
+                      <WebCam cheatingLog={cheatingLog} updateCheatingLog={updateCheatingLog} onModelsReady={() => setModelsReady(true)} />
                     </Box>
                   </BlankCard>
                 </Grid>

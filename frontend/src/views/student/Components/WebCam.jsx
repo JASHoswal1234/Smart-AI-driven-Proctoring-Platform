@@ -39,7 +39,7 @@ const VARIANCE_THRESHOLD = 30;
 // At most 1 warning per minute
 const AUDIO_WARNING_COOLDOWN_MS = 60000;
 
-export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, compact = false }) {
+export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, onModelsReady, compact = false }) {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   const faceMeshRef = useRef(null);
@@ -268,6 +268,7 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
         const net = await cocossd.load();
         console.log('✅ Models loaded successfully');
         setModelsLoading(false);
+        onModelsReady?.(); // notify TestPage — timer starts now
 
         intervalId = setInterval(async () => {
           // Stop processing if 10+ violations
