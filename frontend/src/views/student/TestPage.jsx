@@ -19,18 +19,37 @@ import { useCheatingLog } from 'src/context/CheatingLogContext';
 import swal from 'sweetalert';
 import axiosInstance from '../../axios';
 
-// Standalone timer hook so it runs independently of drawer state
-function useExamTimer(durationInMinutes) {
+// Standalone timer hook so it runs independently of drawer state.
+// onExpire is called exactly once when the countdown genuinely reaches 0
+// (never on mount when the duration hasn't loaded yet).
+function useExamTimer(durationInMinutes, onExpire) {
   const [timeLeft, setTimeLeft] = useState(durationInMinutes * 60);
+  // true only after the timer has actually started counting from a real value
+  const hasStartedRef = useRef(false);
+  const onExpireRef   = useRef(onExpire);
+  useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
 
   useEffect(() => {
+    if (!durationInMinutes) return;
+    // Duration just became known — initialise and arm the timer
     setTimeLeft(durationInMinutes * 60);
+    hasStartedRef.current = true;
   }, [durationInMinutes]);
 
   useEffect(() => {
     if (!durationInMinutes) return;
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev <= 1 ? 0 : prev - 1));
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          // Only fire expire callback if the timer was genuinely running
+          if (hasStartedRef.current) {
+            onExpireRef.current?.();
+            hasStartedRef.current = false; // prevent double-fire
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, [durationInMinutes]);
@@ -57,7 +76,6 @@ const TestPage = () => {
   const { cheatingLog, updateCheatingLog } = useCheatingLog();
   const [saveCheatingLogMutation] = useSaveCheatingLogMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [lastTabSwitchTime, setLastTabSwitchTime] = useState(0);
   const [questions, setQuestions] = useState([]);
   const { data, isLoading } = useGetQuestionsQuery(examId);
   const { data: codingQuestionsData, isLoading: isCodingLoading } = useGetCodingQuestionsQuery(examId);
@@ -70,14 +88,18 @@ const TestPage = () => {
   const [questionPanelOpen, setQuestionPanelOpen] = useState(false);
 
   // All refs declared up front so event handlers always have stable references
-  const terminatedRef        = useRef(false);
-  const lastTabSwitchTimeRef = useRef(0);
-  const cheatingLogRef       = useRef(cheatingLog);
+  const terminatedRef           = useRef(false);
+  const lastTabSwitchTimeRef    = useRef(0);
+  const cheatingLogRef          = useRef(cheatingLog);
+  const handleTestSubmissionRef = useRef(null); // stable ref so timer effect never captures stale fn
   const [shouldTerminate, setShouldTerminate] = useState(false);
 
   useEffect(() => { cheatingLogRef.current = cheatingLog; }, [cheatingLog]);
 
-  const { timeLeft, formatted: timeFormatted } = useExamTimer(examDurationInSeconds);
+  const { timeLeft, formatted: timeFormatted } = useExamTimer(examDurationInSeconds, () => {
+    toast.warning('Time is up! Submitting your test...');
+    handleTestSubmissionRef.current?.(true); // skipConfirm = true
+  });
 
   // ── Back button / navigation guard ─────────────────────────────────────────
   useEffect(() => {
@@ -107,14 +129,6 @@ const TestPage = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-submit when timer hits 0
-  useEffect(() => {
-    if (timeLeft === 0 && examDurationInSeconds > 0) {
-      toast.warning('Time is up! Submitting your test...');
-      handleTestSubmission();
-    }
-  }, [timeLeft]);
 
   // Camera permission check
   useEffect(() => {
@@ -215,15 +229,16 @@ const TestPage = () => {
   }, [userExamdata, examId]);
 
   // Tab/focus/fullscreen violations
+  // NOTE: uses only refs (never stale closure values) so this effect runs once and never re-registers.
   useEffect(() => {
-    const guard = () => terminatedRef.current || (cheatingLog.totalViolations || 0) >= 10;
+    const guard = () => terminatedRef.current || (cheatingLogRef.current.totalViolations || 0) >= 10;
     const bump = (title, msg) => {
       if (guard()) return;
       const now = Date.now();
-      if (now - lastTabSwitchTime < 2000) return;
-      setLastTabSwitchTime(now);
-      const n = (cheatingLog.totalViolations || 0) + 1;
-      updateCheatingLog({ ...cheatingLog, totalViolations: n });
+      if (now - lastTabSwitchTimeRef.current < 2000) return;
+      lastTabSwitchTimeRef.current = now;
+      const n = (cheatingLogRef.current.totalViolations || 0) + 1;
+      updateCheatingLog((prev) => ({ ...prev, totalViolations: n }));
       swal(title, `${msg} (Count: ${n})`, 'warning');
     };
     const onVisibility = () => { if (document.hidden) bump('Tab Switch Detected!', 'Warning Recorded'); };
@@ -237,7 +252,7 @@ const TestPage = () => {
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('fullscreenchange', onFS);
     };
-  }, [cheatingLog, updateCheatingLog, lastTabSwitchTime]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if ((cheatingLog.totalViolations || 0) >= 10 && !terminatedRef.current && !shouldTerminate) {
@@ -383,6 +398,12 @@ const TestPage = () => {
   };
 
   const saveUserTestScore = () => setScore((s) => s + 1);
+
+  // Keep the submission ref pointing to the latest function instance so the
+  // timer effect (which has a [] dep array) always calls the current version.
+  useEffect(() => {
+    handleTestSubmissionRef.current = handleTestSubmission;
+  });
 
   if (isExamsLoading || isLoading || isCodingLoading || cameraPermissionChecking) {
     return (

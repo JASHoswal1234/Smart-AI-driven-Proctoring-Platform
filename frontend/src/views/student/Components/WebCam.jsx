@@ -10,8 +10,8 @@ import '@tensorflow/tfjs-backend-webgl';
 
 // Cooldown per violation type in ms
 const COOLDOWN_MS = 8000;
-// Frames looking away before triggering (10 frames = ~5 seconds at 500ms interval) - allow time for rough work
-const AWAY_FRAME_THRESHOLD = 10;
+// Frames looking away before triggering (16 frames = ~8 seconds at 500ms interval) - allow ample time for rough work/calculations
+const AWAY_FRAME_THRESHOLD = 16;
 // Consecutive frames needed to confirm no-face (reduces false positives)
 const NO_FACE_CONFIRMATION_FRAMES = 2;
 // Multiple faces needs MORE frames - strictest check (must see 2+ faces for 3 consecutive frames)
@@ -25,12 +25,19 @@ const CELLPHONE_CONFIDENCE_THRESHOLD = 0.55;
 const OBJECT_CONFIDENCE_THRESHOLD = 0.75;
 
 // ================= AUDIO MONITORING CONSTANTS =================
-// Moderate threshold: balances ambient noise vs speech detection (ambient = 20-40, speech = 50-100+)
-const AUDIO_THRESHOLD = 45;
-// Duration in milliseconds: sustained audio above threshold needed to trigger warning (8 seconds = prolonged conversation)
-const AUDIO_DURATION_THRESHOLD = 8000; // 8 seconds of continuous speaking
-// Variance threshold: speech has peaks/valleys (>15), ambient noise is flat (<15)
-const VARIANCE_THRESHOLD = 15;
+// ================= AUDIO MONITORING CONSTANTS =================
+// Hard floor — never trigger below this even if baseline is very low (e.g. anechoic room)
+const AUDIO_ABSOLUTE_FLOOR = 65;
+// How much above the calibrated baseline RMS must be to count as "suspicious"
+const AUDIO_BASELINE_DELTA = 22;
+// Calibration window: first 15 seconds used to measure the student's ambient noise level (more samples = better baseline)
+const AUDIO_CALIBRATION_MS = 15000;
+// Duration audio must stay above threshold before triggering a warning
+const AUDIO_DURATION_THRESHOLD = 15000; // 15 seconds of sustained elevated audio
+// Speech has clear amplitude peaks/valleys; flat office hum does not
+const VARIANCE_THRESHOLD = 30;
+// At most 1 warning per minute
+const AUDIO_WARNING_COOLDOWN_MS = 60000;
 
 export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, compact = false }) {
   const webcamRef = useRef(null);
@@ -51,6 +58,10 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
   const audioStartTimeRef = useRef(null); // When sustained audio started
   const audioCheckIntervalRef = useRef(null); // Interval ID for audio checking
   const audioSamplesRef = useRef([]); // Store RMS samples for variance calculation
+  const audioBaselineRef = useRef(null); // Calibrated ambient RMS for this student's environment
+  const audioCalibrationSamplesRef = useRef([]); // Samples collected during calibration window
+  const audioCalibrationStartRef = useRef(null); // When calibration started
+  const audioLastWarnedRef = useRef(0); // Timestamp of last audio warning (per-warning cooldown)
   
   // Confirmation counters for reducing false positives
   const noFaceFramesRef = useRef(0);
@@ -101,15 +112,9 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
 
   // ================= HANDLE AUDIO WARNING (NO VIOLATION COUNT) =================
   const handleAudioWarning = useCallback((label) => {
-    const now = Date.now();
-
-    // Per-type cooldown check - only show warning every 8 seconds
-    if (cooldownMapRef.current['audioWarning'] && now - cooldownMapRef.current['audioWarning'] < COOLDOWN_MS) return;
-    cooldownMapRef.current['audioWarning'] = now;
-
+    // Cooldown is already enforced in the audio interval via audioLastWarnedRef.
+    // This function just shows the popup.
     console.log('[WebCam] ⚠️ AUDIO WARNING (not counted as violation):', label);
-
-    // Show warning popup without incrementing violation count
     swal('⚠️ Audio Detected', `${label}\n\nThis is a warning and does not count toward exam termination.`, 'warning');
   }, []);
 
@@ -230,9 +235,10 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
       smoothPoseRef.current.pitch = alpha * smoothPoseRef.current.pitch + (1 - alpha) * pitchRatio;
 
       const { yaw, pitch } = smoothPoseRef.current;
-      // Very lenient thresholds - allow looking down for rough work, reading questions
-      // Only flag extreme movements (completely turning away or looking far down for extended time)
-      const isAway = yaw < 0.25 || yaw > 1.75 || pitch < 0.25 || pitch > 2.0;
+      // Lenient thresholds — only flag extreme/deliberate head turns away from screen.
+      // Looking down for rough work (pitch up to 2.5) is explicitly allowed.
+      // Lateral turns (yaw < 0.22 or > 1.78) must be very sharp to count.
+      const isAway = yaw < 0.22 || yaw > 1.78 || pitch < 0.22 || pitch > 2.5;
 
       if (isAway) {
         awayFramesRef.current++;
@@ -384,6 +390,10 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
 
         console.log('✅ Audio monitoring initialized');
 
+        // Kick off calibration window
+        audioCalibrationStartRef.current = Date.now();
+        audioCalibrationSamplesRef.current = [];
+        console.log('[Audio] 📐 Calibrating ambient baseline for', AUDIO_CALIBRATION_MS / 1000, 'seconds...');
         // Start checking audio levels periodically
         audioCheckIntervalRef.current = setInterval(() => {
           // Stop processing if 10+ violations
@@ -401,50 +411,75 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
 
           const now = Date.now();
 
-          // Check if audio exceeds HIGH threshold (120 - ignores ambient noise)
-          if (rms > AUDIO_THRESHOLD) {
-            // Start tracking sustained audio
+          // ── PHASE 1: Calibration ──────────────────────────────────────────
+          // Spend the first AUDIO_CALIBRATION_MS learning the student's ambient level
+          if (audioBaselineRef.current === null) {
+            audioCalibrationSamplesRef.current.push(rms);
+            const elapsed = now - audioCalibrationStartRef.current;
+
+            if (elapsed >= AUDIO_CALIBRATION_MS) {
+              const samples = audioCalibrationSamplesRef.current;
+              // Use the 80th-percentile sample as baseline (ignores occasional spikes during calibration)
+              const sorted = [...samples].sort((a, b) => a - b);
+              const p80 = sorted[Math.floor(sorted.length * 0.8)] ?? sorted[sorted.length - 1] ?? 30;
+              audioBaselineRef.current = p80;
+              audioCalibrationSamplesRef.current = [];
+              console.log('[Audio] ✅ Baseline calibrated:', p80.toFixed(1), '(from', samples.length, 'samples)');
+            }
+            return; // Don't run detection during calibration
+          }
+
+          // ── PHASE 2: Detection (adaptive threshold) ───────────────────────
+          // Dynamic threshold = max(hard floor, baseline + delta)
+          // Floor of 65 ensures we never flag genuinely quiet environments on trivial noise
+          const dynamicThreshold = Math.max(AUDIO_ABSOLUTE_FLOOR, audioBaselineRef.current + AUDIO_BASELINE_DELTA);
+
+          if (rms > dynamicThreshold) {
+            // Start tracking sustained elevated audio
             if (!audioStartTimeRef.current) {
               audioStartTimeRef.current = now;
-              audioSamplesRef.current = []; // Reset samples
-              console.log('[Audio] 🔊 Sustained audio started, RMS:', rms.toFixed(1));
+              audioSamplesRef.current = [];
+              console.log('[Audio] 🔊 Elevated audio started, RMS:', rms.toFixed(1), 'threshold:', dynamicThreshold.toFixed(1));
             }
 
-            // Collect RMS samples for variance calculation
             audioSamplesRef.current.push(rms);
 
-            // Check if audio has been sustained long enough (8 seconds)
             const duration = now - audioStartTimeRef.current;
             if (duration >= AUDIO_DURATION_THRESHOLD) {
-              // Calculate variance from collected samples
+              // Calculate variance — confirms it's speech-like, not sustained loud ambient
               const samples = audioSamplesRef.current;
               const mean = samples.reduce((a, b) => a + b, 0) / samples.length;
               const variance = samples.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / samples.length;
 
-              console.log('[Audio] 📊 RMS mean:', mean.toFixed(1), 'Variance:', variance.toFixed(1), 'Samples:', samples.length);
+              console.log('[Audio] 📊 Mean:', mean.toFixed(1), 'Variance:', variance.toFixed(1), 'Baseline:', audioBaselineRef.current.toFixed(1));
 
-              // Only trigger if variance indicates speech pattern (peaks/valleys > 20)
               if (variance > VARIANCE_THRESHOLD) {
-                console.log('[Audio] 🚨 Suspicious audio detected! Duration:', duration, 'ms, Variance:', variance.toFixed(1));
-                handleAudioWarning('Suspicious audio/communication detected');
+                // Per-warning cooldown check (3 minutes between warnings)
+                if (now - audioLastWarnedRef.current >= AUDIO_WARNING_COOLDOWN_MS) {
+                  audioLastWarnedRef.current = now;
+                  console.log('[Audio] 🚨 Suspicious speech-like audio detected!');
+                  handleAudioWarning('Sustained conversation detected near microphone');
+                } else {
+                  console.log('[Audio] 🔕 Warning suppressed (cooldown active)');
+                }
               } else {
-                console.log('[Audio] ✅ Flat ambient noise detected (variance too low), ignoring');
+                console.log('[Audio] ✅ Elevated but flat — sustained ambient noise, ignoring');
               }
 
-              // Reset after checking
+              // Reset after each evaluation window
               audioStartTimeRef.current = null;
               audioSamplesRef.current = [];
             }
           } else {
-            // Audio dropped below threshold - reset timer
+            // Audio dropped back to ambient — reset timer
             if (audioStartTimeRef.current) {
               const duration = now - audioStartTimeRef.current;
-              console.log('[Audio] 🔇 Audio stopped. Duration was:', duration, 'ms (threshold:', AUDIO_DURATION_THRESHOLD, 'ms)');
+              console.log('[Audio] 🔇 Audio normalised. Duration was:', duration, 'ms');
               audioStartTimeRef.current = null;
               audioSamplesRef.current = [];
             }
           }
-        }, 200); // Check every 200ms for responsive detection
+        }, 200); // Check every 200ms
 
       } catch (error) {
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -483,6 +518,10 @@ export default function WebCam({ cheatingLog, updateCheatingLog, onTerminate, co
       // Reset audio tracking
       audioStartTimeRef.current = null;
       audioSamplesRef.current = [];
+      audioBaselineRef.current = null;
+      audioCalibrationSamplesRef.current = [];
+      audioCalibrationStartRef.current = null;
+      audioLastWarnedRef.current = 0;
       analyserRef.current = null;
 
       console.log('✅ Audio monitoring cleaned up');
