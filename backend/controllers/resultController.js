@@ -6,6 +6,8 @@ import SubjectiveResponse from "../models/subjectiveResponseModel.js";
 import { gradeSubjectiveAnswer } from "../utils/groqGrader.js";
 import { sendResultEmail } from "../utils/emailService.js";
 import Exam from "../models/examModel.js";
+import CheatingLog from "../models/cheatingLogModel.js";
+import User from "../models/userModel.js";
 
 // @desc    Save exam result
 // @route   POST /api/results
@@ -438,6 +440,45 @@ const getExamAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Reset a student's exam attempt — deletes Result + CheatingLog atomically
+// @route   DELETE /api/users/results/reset/:examId/:email
+// @access  Private (teacher only)
+const resetStudentAttempt = asyncHandler(async (req, res) => {
+  const { examId, email } = req.params;
+
+  if (req.user.role !== 'teacher') {
+    res.status(403);
+    throw new Error('Not authorized — teachers only');
+  }
+
+  // Resolve email → userId so we can delete the Result document
+  const user = await User.findOne({ email: email.toLowerCase() }).select('_id');
+  if (!user) {
+    res.status(404);
+    throw new Error(`No user found with email: ${email}`);
+  }
+
+  // Delete result (may not exist if exam was terminated before submission)
+  const resultDeletion = await Result.deleteOne({ examId, userId: user._id });
+
+  // Delete cheating log (may not exist for clean students)
+  const logDeletion = await CheatingLog.deleteOne({ examId, email: email.toLowerCase() });
+
+  // Also delete any subjective responses for this student+exam
+  await SubjectiveResponse.deleteMany({ examId, studentEmail: email.toLowerCase() });
+
+  console.log(`[resetStudentAttempt] examId=${examId} email=${email}`);
+  console.log(`  Result deleted: ${resultDeletion.deletedCount}`);
+  console.log(`  CheatingLog deleted: ${logDeletion.deletedCount}`);
+
+  res.status(200).json({
+    success: true,
+    message: `Attempt reset for ${email} on exam ${examId}`,
+    resultDeleted: resultDeletion.deletedCount > 0,
+    cheatingLogDeleted: logDeletion.deletedCount > 0,
+  });
+});
+
 export {
   saveResult,
   getResultsByExamId,
@@ -445,4 +486,5 @@ export {
   toggleResultVisibility,
   getAllResults,
   getExamAnalytics,
+  resetStudentAttempt,
 };

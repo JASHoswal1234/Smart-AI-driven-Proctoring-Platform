@@ -81,6 +81,20 @@ export const examApiSlice = apiSlice.injectEndpoints({
       }),
       providesTags: [{ type: 'Result', id: 'LIST' }],
     }),
+
+    // Reset a student's exam attempt — deletes Result + CheatingLog (teacher only)
+    resetStudentAttempt: builder.mutation({
+      query: ({ examId, email }) => ({
+        url: `${EXAMS_URL}/results/reset/${examId}/${encodeURIComponent(email)}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, { examId }) => [
+        { type: 'Result',      id: examId },
+        { type: 'Result',      id: 'LIST' },
+        { type: 'CheatingLog', id: examId },
+        { type: 'CheatingLog', id: 'LIST' },
+      ],
+    }),
   }),
 });
 
@@ -95,4 +109,5 @@ export const {
   useGetUserResultsQuery,
   useGetResultsByExamIdQuery,
   useGetAllResultsQuery,
+  useResetStudentAttemptMutation,
 } = examApiSlice;

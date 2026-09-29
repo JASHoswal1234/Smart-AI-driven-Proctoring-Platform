@@ -7,12 +7,13 @@ import {
   Divider, Button, Stack,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useGetExamsQuery, useGetResultsByExamIdQuery } from 'src/slices/examApiSlice';
+import { useGetExamsQuery, useGetResultsByExamIdQuery, useResetStudentAttemptMutation } from 'src/slices/examApiSlice';
 import { useGetCheatingLogsQuery } from 'src/slices/cheatingLogApiSlice';
 import CloseIcon from '@mui/icons-material/Close';
 import ImageIcon from '@mui/icons-material/Image';
 import WarningIcon from '@mui/icons-material/Warning';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const getViolationStyle = (count) => {
@@ -37,6 +38,7 @@ export default function CheatingTable() {
   const [cheatingLogs, setCheatingLogs] = useState([]);
   const [selectedLog, setSelectedLog]   = useState(null);
   const [openDialog, setOpenDialog]     = useState(false);
+  const [resettingEmail, setResettingEmail] = useState(null); // tracks which row is resetting
 
   const { data: examsData, isLoading: examsLoading, error: examsError } = useGetExamsQuery();
   const {
@@ -49,6 +51,8 @@ export default function CheatingTable() {
     data: resultsData,
     isLoading: resultsLoading,
   } = useGetResultsByExamIdQuery(selectedExamId, { skip: !selectedExamId });
+
+  const [resetStudentAttempt] = useResetStudentAttemptMutation();
 
   // Auto-select first exam
   useEffect(() => {
@@ -80,6 +84,23 @@ export default function CheatingTable() {
 
   const handleViewReport = (log) => {
     navigate(`/proctoring-report/${selectedExamId}/${encodeURIComponent(log.email)}`);
+  };
+
+  const handleResetAttempt = async (log) => {
+    const confirmed = window.confirm(
+      `Reset exam attempt for ${log.username} (${log.email})?\n\nThis will permanently delete:\n• Their result/score\n• Their proctoring/cheating log\n• Their subjective responses\n\nThe student will be able to re-take the exam from scratch.`
+    );
+    if (!confirmed) return;
+
+    setResettingEmail(log.email);
+    try {
+      await resetStudentAttempt({ examId: selectedExamId, email: log.email }).unwrap();
+      // RTK Query cache invalidation handles the UI refresh automatically
+    } catch (err) {
+      alert(`Reset failed: ${err?.data?.message || err?.message || 'Unknown error'}`);
+    } finally {
+      setResettingEmail(null);
+    }
   };
 
   const handleViewScreenshots = (log) => { setSelectedLog(log); setOpenDialog(true); };
@@ -271,6 +292,26 @@ export default function CheatingTable() {
                                 View Report
                               </Button>
                             </Tooltip>
+                            <Tooltip title="Reset attempt — deletes result + proctoring log">
+                              <span>
+                                <IconButton
+                                  onClick={() => handleResetAttempt(log)}
+                                  disabled={resettingEmail === log.email}
+                                  size="small"
+                                  sx={{
+                                    color: '#DC2626',
+                                    border: '1px solid #FCA5A5',
+                                    borderRadius: '8px',
+                                    '&:hover': { backgroundColor: '#FEF2F2' },
+                                    '&:disabled': { color: '#D1D5DB', borderColor: '#E5E7EB' },
+                                  }}
+                                >
+                                  {resettingEmail === log.email
+                                    ? <CircularProgress size={14} sx={{ color: '#DC2626' }} />
+                                    : <RefreshIcon fontSize="small" />}
+                                </IconButton>
+                              </span>
+                            </Tooltip>
                             <Tooltip title={screenshotCount > 0 ? `${screenshotCount} screenshots (restricted)` : 'No evidence'}>
                               <span>
                                 <IconButton
@@ -364,6 +405,23 @@ export default function CheatingTable() {
                         >
                           View Report
                         </Button>
+                        <Tooltip title="Reset attempt">
+                          <IconButton
+                            onClick={() => handleResetAttempt(log)}
+                            disabled={resettingEmail === log.email}
+                            size="small"
+                            sx={{
+                              color: '#DC2626',
+                              border: '1px solid #FCA5A5',
+                              borderRadius: '8px',
+                              '&:hover': { backgroundColor: '#FEF2F2' },
+                            }}
+                          >
+                            {resettingEmail === log.email
+                              ? <CircularProgress size={14} sx={{ color: '#DC2626' }} />
+                              : <RefreshIcon fontSize="small" />}
+                          </IconButton>
+                        </Tooltip>
                         <IconButton
                           onClick={() => handleViewScreenshots(log)}
                           disabled={screenshotCount === 0}

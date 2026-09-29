@@ -7,6 +7,7 @@ import {
   toggleResultVisibility,
   getAllResults,
   getExamAnalytics,
+  resetStudentAttempt,
 } from "../controllers/resultController.js";
 
 const resultRoutes = express.Router();
@@ -40,5 +41,14 @@ resultRoutes.put(
   "/results/:resultId/toggle-visibility",
   toggleResultVisibility
 );
+
+// Reset a student's exam attempt (teacher only) — deletes Result + CheatingLog atomically
+resultRoutes.delete("/results/reset/:examId/:email", (req, res, next) => {
+  if (req.user.role !== 'teacher') {
+    res.status(403);
+    throw new Error('Not authorized');
+  }
+  next();
+}, resetStudentAttempt);
 
 export default resultRoutes;
