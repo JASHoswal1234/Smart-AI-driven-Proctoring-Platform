@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Grid, Paper, Typography, Chip, Divider, CircularProgress,
@@ -61,6 +61,52 @@ export default function ProctoringReportPage() {
   const { examId, email } = useParams();
   const navigate = useNavigate();
   const decodedEmail = decodeURIComponent(email);
+
+  // Inject print-specific styles once on mount — hides all UI chrome,
+  // sidebar, nav, buttons and shows only the report content.
+  useEffect(() => {
+    const styleId = 'proctoring-report-print-style';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = `
+        @media print {
+          /* Hide everything by default */
+          body > * { display: none !important; }
+
+          /* Show only the root app mount */
+          #root { display: block !important; }
+
+          /* Hide sidebar, topbar, and any layout chrome rendered by FullLayout */
+          header, nav, aside,
+          [class*="sidebar"], [class*="Sidebar"],
+          [class*="topbar"], [class*="Topbar"],
+          [class*="header"], [class*="Header"],
+          [class*="navbar"], [class*="Navbar"],
+          [data-print-hide] { display: none !important; }
+
+          /* Show only the report content area */
+          [data-print-content] { display: block !important; }
+          [data-print-content] * { visibility: visible !important; }
+
+          /* Reset page margins */
+          @page { margin: 1.5cm; }
+          body { margin: 0; background: #fff; }
+
+          /* Ensure colors print correctly */
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+          /* Avoid breaking inside rows or cards */
+          tr, .MuiCard-root, .MuiPaper-root { page-break-inside: avoid; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    return () => {
+      const el = document.getElementById(styleId);
+      if (el) el.remove();
+    };
+  }, []);
 
   // Fetch data in parallel
   const {
@@ -177,10 +223,11 @@ export default function ProctoringReportPage() {
 
   return (
     <PageContainer title="Proctoring Report" description="Student proctoring report">
-      <Box sx={{ pb: 4 }}>
+      <Box sx={{ pb: 4 }} data-print-content>
 
         {/* ── Header bar ────────────────────────────────────────────────── */}
         <Box
+          data-print-hide
           sx={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             flexWrap: 'wrap', gap: 2, mb: 3,
